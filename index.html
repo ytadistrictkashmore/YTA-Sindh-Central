@@ -1,1 +1,148 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>YTA Sindh Central Secretariat</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div>
+      <h1>YTA Sindh Central Secretariat</h1>
+      <p>Young Teachers Alliance — Sindh</p>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section class="welcome">
+      <h2>Central Secretariat</h2>
+      <p>
+        Welcome to the YTA Sindh Central Secretariat Management System.
+      </p>
+    </section>
+
+    <section class="login-card">
+
+      <h2>Owner Login</h2>
+
+      <form id="loginForm">
+
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          placeholder="Enter your email"
+          required
+        >
+
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          placeholder="Enter your password"
+          required
+        >
+
+        <button type="submit">
+          Login
+        </button>
+
+      </form>
+
+      <p id="loginMessage"></p>
+
+    </section>
+
+    <section id="dashboard" class="dashboard hidden">
+
+      <div class="dashboard-header">
+        <div>
+          <h2>Central Owner Dashboard</h2>
+          <p id="userEmail"></p>
+        </div>
+
+        <button id="logoutBtn">
+          Logout
+        </button>
+      </div>
+
+      <div class="stats">
+
+        <div class="stat-card">
+          <h3>Total Members</h3>
+          <strong id="totalMembers">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Under Review</h3>
+          <strong id="pendingMembers">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Approved</h3>
+          <strong id="approvedMembers">0</strong>
+        </div>
+
+        <div class="stat-card">
+          <h3>Rejected</h3>
+          <strong id="rejectedMembers">0</strong>
+        </div>
+
+      </div>
+
+      <div class="navigation">
+
+        <div class="nav-card">
+          <h3>Central</h3>
+          <p>Central Secretariat</p>
+          <button>Open</button>
+        </div>
+
+        <div class="nav-card">
+          <h3>Divisions</h3>
+          <p>View all Sindh divisions</p>
+          <button>Open</button>
+        </div>
+
+        <div class="nav-card">
+          <h3>Districts</h3>
+          <p>View districts by division</p>
+          <button>Open</button>
+        </div>
+
+        <div class="nav-card">
+          <h3>Talukas</h3>
+          <p>View talukas by district</p>
+          <button>Open</button>
+        </div>
+
+        <div class="nav-card">
+          <h3>Members</h3>
+          <p>Manage membership applications</p>
+          <button>Open</button>
+        </div>
+
+        <div class="nav-card">
+          <h3>Office Bearers</h3>
+          <p>Manage dynamic positions</p>
+          <button>Open</button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
