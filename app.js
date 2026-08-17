@@ -1,251 +1,48 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // ==============================
-  // Supabase
-  // ==============================
-
   const supabaseClient = window.supabase.createClient(
     window.YTA_CONFIG.supabaseUrl,
     window.YTA_CONFIG.supabaseAnonKey
   );
 
+  const $ = (id) => document.getElementById(id);
 
-  // ==============================
-  // Elements
-  // ==============================
+  const loginForm = $("loginForm");
+  const loginMessage = $("loginMessage");
+  const dashboard = $("dashboard");
+  const loginCard = document.querySelector(".login-card");
+  const logoutBtn = $("logoutBtn");
+  const userEmail = $("userEmail");
 
-  const loginForm =
-    document.getElementById("loginForm");
+  const totalMembers = $("totalMembers");
+  const pendingMembers = $("pendingMembers");
+  const approvedMembers = $("approvedMembers");
+  const rejectedMembers = $("rejectedMembers");
 
-  const loginMessage =
-    document.getElementById("loginMessage");
-
-  const dashboard =
-    document.getElementById("dashboard");
-
-  const loginCard =
-    document.querySelector(".login-card");
-
-  const logoutBtn =
-    document.getElementById("logoutBtn");
-
-  const userEmail =
-    document.getElementById("userEmail");
-
-  const totalMembers =
-    document.getElementById("totalMembers");
-
-  const pendingMembers =
-    document.getElementById("pendingMembers");
-
-  const approvedMembers =
-    document.getElementById("approvedMembers");
-
-  const rejectedMembers =
-    document.getElementById("rejectedMembers");
-
-  const loadMembersBtn =
-    document.getElementById("loadMembersBtn");
-
-  const memberSearch =
-    document.getElementById("memberSearch");
-
-  const memberStatus =
-    document.getElementById("memberStatus");
-
-  const membersTableBody =
-    document.getElementById("membersTableBody");
-
-  const membersMessage =
-    document.getElementById("membersMessage");
-
+  const loadMembersBtn = $("loadMembersBtn");
+  const memberSearch = $("memberSearch");
+  const memberStatus = $("memberStatus");
+  const membersTableBody = $("membersTableBody");
+  const membersMessage = $("membersMessage");
 
   let allMembers = [];
 
 
-  // ==============================
-  // Messages
-  // ==============================
+  /* =========================
+     BASIC HELPERS
+  ========================= */
 
-  function showMessage(text, error = false) {
-
+  function message(text, error = false) {
     if (!loginMessage) return;
 
     loginMessage.textContent = text;
-
     loginMessage.style.color =
       error ? "#b91c1c" : "#15803d";
   }
 
 
-  function showMembersMessage(text, error = false) {
-
-    if (!membersMessage) return;
-
-    membersMessage.textContent = text;
-
-    membersMessage.style.color =
-      error ? "#b91c1c" : "#15803d";
-  }
-
-
-  // ==============================
-  // Dashboard
-  // ==============================
-
-  function showDashboard(email) {
-
-    if (loginCard) {
-      loginCard.classList.add("hidden");
-    }
-
-    if (dashboard) {
-      dashboard.classList.remove("hidden");
-    }
-
-    if (userEmail) {
-      userEmail.textContent = email || "";
-    }
-  }
-
-
-  function showLogin() {
-
-    if (loginCard) {
-      loginCard.classList.remove("hidden");
-    }
-
-    if (dashboard) {
-      dashboard.classList.add("hidden");
-    }
-  }
-
-
-  // ==============================
-  // User Profile / Role
-  // ==============================
-
-  async function getUserProfile(userId) {
-
-    const { data, error } =
-      await supabaseClient
-        .from("user_profiles")
-        .select("id, full_name, role")
-        .eq("id", userId)
-        .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
-  }
-
-
-  // ==============================
-  // Dashboard Statistics
-  // ==============================
-
-  async function loadStats() {
-
-    try {
-
-      const totalResult =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          });
-
-      const pendingResult =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Under Review");
-
-      const approvedResult =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Approved");
-
-      const rejectedResult =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Rejected");
-
-
-      if (totalResult.error) {
-        console.error(totalResult.error);
-      }
-
-      if (pendingResult.error) {
-        console.error(pendingResult.error);
-      }
-
-      if (approvedResult.error) {
-        console.error(approvedResult.error);
-      }
-
-      if (rejectedResult.error) {
-        console.error(rejectedResult.error);
-      }
-
-
-      if (totalMembers) {
-        totalMembers.textContent =
-          totalResult.count ?? 0;
-      }
-
-      if (pendingMembers) {
-        pendingMembers.textContent =
-          pendingResult.count ?? 0;
-      }
-
-      if (approvedMembers) {
-        approvedMembers.textContent =
-          approvedResult.count ?? 0;
-      }
-
-      if (rejectedMembers) {
-        rejectedMembers.textContent =
-          rejectedResult.count ?? 0;
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Statistics error:",
-        error
-      );
-
-    }
-  }
-
-
-  // ==============================
-  // Security
-  // ==============================
-
   function escapeHTML(value) {
-
-    if (
-      value === null ||
-      value === undefined
-    ) {
-      return "";
-    }
+    if (value === null || value === undefined) return "";
 
     return String(value)
       .replace(/&/g, "&amp;")
@@ -256,37 +53,121 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  // ==============================
-  // Status Style
-  // ==============================
+  function showDashboard(email) {
 
-  function getStatusClass(status) {
+    if (loginCard)
+      loginCard.classList.add("hidden");
 
-    if (status === "Approved") {
-      return "status-approved";
-    }
+    if (dashboard)
+      dashboard.classList.remove("hidden");
 
-    if (status === "Rejected") {
-      return "status-rejected";
-    }
-
-    return "status-pending";
+    if (userEmail)
+      userEmail.textContent = email || "";
   }
 
 
-  // ==============================
-  // Render Members
-  // ==============================
+  function showLogin() {
+
+    if (loginCard)
+      loginCard.classList.remove("hidden");
+
+    if (dashboard)
+      dashboard.classList.add("hidden");
+  }
+
+
+  /* =========================
+     USER ROLE
+  ========================= */
+
+  async function getUserProfile(userId) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("user_profiles")
+        .select("id, full_name, role")
+        .eq("id", userId)
+        .single();
+
+    if (error) throw error;
+
+    return data;
+  }
+
+
+  /* =========================
+     STATISTICS
+  ========================= */
+
+  async function loadStats() {
+
+    try {
+
+      const total =
+        await supabaseClient
+          .from("members")
+          .select("*", {
+            count: "exact",
+            head: true
+          });
+
+      const pending =
+        await supabaseClient
+          .from("members")
+          .select("*", {
+            count: "exact",
+            head: true
+          })
+          .eq("status", "Under Review");
+
+      const approved =
+        await supabaseClient
+          .from("members")
+          .select("*", {
+            count: "exact",
+            head: true
+          })
+          .eq("status", "Approved");
+
+      const rejected =
+        await supabaseClient
+          .from("members")
+          .select("*", {
+            count: "exact",
+            head: true
+          })
+          .eq("status", "Rejected");
+
+
+      if (totalMembers)
+        totalMembers.textContent = total.count ?? 0;
+
+      if (pendingMembers)
+        pendingMembers.textContent = pending.count ?? 0;
+
+      if (approvedMembers)
+        approvedMembers.textContent = approved.count ?? 0;
+
+      if (rejectedMembers)
+        rejectedMembers.textContent = rejected.count ?? 0;
+
+    } catch (error) {
+
+      console.error("Statistics:", error);
+
+    }
+  }
+
+
+  /* =========================
+     MEMBERS
+  ========================= */
 
   function renderMembers(members) {
 
-    if (!membersTableBody) {
-      return;
-    }
-
+    if (!membersTableBody) return;
 
     membersTableBody.innerHTML = "";
-
 
     if (!members.length) {
 
@@ -304,104 +185,63 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     members.forEach(member => {
 
-      const row =
-        document.createElement("tr");
-
+      const row = document.createElement("tr");
 
       row.innerHTML = `
 
-        <td>
-          ${escapeHTML(member.registration_no)}
-        </td>
+        <td>${escapeHTML(member.registration_no)}</td>
 
-        <td>
-          ${escapeHTML(member.full_name)}
-        </td>
+        <td>${escapeHTML(member.full_name)}</td>
 
-        <td>
-          ${escapeHTML(member.father_name)}
-        </td>
+        <td>${escapeHTML(member.father_name)}</td>
 
-        <td>
-          ${escapeHTML(member.cnic)}
-        </td>
+        <td>${escapeHTML(member.cnic)}</td>
 
-        <td>
-          ${escapeHTML(member.mobile)}
-        </td>
+        <td>${escapeHTML(member.mobile)}</td>
 
-        <td>
-          ${escapeHTML(member.district_id)}
-        </td>
+        <td>${escapeHTML(member.district_id)}</td>
 
-        <td>
-          ${escapeHTML(member.taluka_id)}
-        </td>
+        <td>${escapeHTML(member.taluka_id)}</td>
 
-        <td>
-          ${escapeHTML(member.school_name)}
-        </td>
+        <td>${escapeHTML(member.school_name)}</td>
 
-        <td>
-          <span class="${getStatusClass(member.status)}">
-            ${escapeHTML(
-              member.status || "Under Review"
-            )}
-          </span>
-        </td>
+        <td>${escapeHTML(member.status)}</td>
 
         <td>
 
-          <div class="member-action">
+          <button
+            class="view-btn"
+            data-member-view="${member.id}">
+            View
+          </button>
 
-            <button
-              class="view-btn"
-              data-action="view"
-              data-id="${member.id}">
-              View
-            </button>
+          <button
+            class="approve-btn"
+            data-member-approve="${member.id}">
+            Approve
+          </button>
 
-            <button
-              class="approve-btn"
-              data-action="approve"
-              data-id="${member.id}">
-              Approve
-            </button>
-
-            <button
-              class="reject-btn"
-              data-action="reject"
-              data-id="${member.id}">
-              Reject
-            </button>
-
-          </div>
+          <button
+            class="reject-btn"
+            data-member-reject="${member.id}">
+            Reject
+          </button>
 
         </td>
       `;
 
-
       membersTableBody.appendChild(row);
-
     });
-
   }
 
 
-  // ==============================
-  // Load Members
-  // ==============================
-
   async function loadMembers() {
 
-    if (!membersTableBody) {
-      return;
-    }
+    if (!membersTableBody) return;
 
-
-    showMembersMessage(
-      "Members loading..."
-    );
+    if (membersMessage)
+      membersMessage.textContent =
+        "Loading members...";
 
 
     const { data, error } =
@@ -428,26 +268,18 @@ document.addEventListener("DOMContentLoaded", async () => {
           created_at,
           updated_at
         `)
-        .order(
-          "created_at",
-          {
-            ascending: false
-          }
-        );
+        .order("created_at", {
+          ascending: false
+        });
 
 
     if (error) {
 
-      console.error(
-        "Members error:",
-        error
-      );
+      console.error(error);
 
-      showMembersMessage(
-        "Members load nahi ho sake: " +
-        error.message,
-        true
-      );
+      if (membersMessage)
+        membersMessage.textContent =
+          error.message;
 
       return;
     }
@@ -455,224 +287,102 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     allMembers = data || [];
 
-
-    showMembersMessage(
-      `${allMembers.length} members loaded.`
-    );
-
+    if (membersMessage)
+      membersMessage.textContent =
+        `${allMembers.length} members loaded.`;
 
     renderMembers(allMembers);
-
   }
 
-
-  // ==============================
-  // Search / Filter
-  // ==============================
 
   function filterMembers() {
 
     const search =
-      (
-        memberSearch?.value || ""
-      )
+      (memberSearch?.value || "")
         .toLowerCase()
         .trim();
 
-
-    const selectedStatus =
+    const status =
       memberStatus?.value || "";
 
 
-    const filtered =
+    const result =
       allMembers.filter(member => {
 
-
-        const searchableText = [
-
+        const text = [
           member.registration_no,
-
           member.full_name,
-
           member.father_name,
-
           member.cnic,
-
           member.mobile,
-
           member.school_name,
-
           member.semis_code,
-
           member.designation
-
         ]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
 
 
-        const searchMatch =
-          !search ||
-          searchableText.includes(search);
-
-
-        const statusMatch =
-          !selectedStatus ||
-          member.status === selectedStatus;
-
-
         return (
-          searchMatch &&
-          statusMatch
+          (!search || text.includes(search)) &&
+          (!status || member.status === status)
         );
-
       });
 
 
-    renderMembers(filtered);
-
+    renderMembers(result);
   }
 
 
-  // ==============================
-  // Update Member Status
-  // ==============================
-
-  async function updateMemberStatus(
-    memberId,
-    newStatus
+  async function changeMemberStatus(
+    id,
+    status
   ) {
 
     const { error } =
       await supabaseClient
         .from("members")
         .update({
-          status: newStatus,
+          status: status,
           updated_at:
             new Date().toISOString()
         })
-        .eq(
-          "id",
-          memberId
-        );
+        .eq("id", id);
 
 
     if (error) {
 
-      console.error(
-        "Status update error:",
-        error
-      );
-
-      alert(
-        "Status update nahi ho saka.\n\n" +
-        error.message
-      );
+      alert(error.message);
 
       return;
     }
 
 
     await loadMembers();
-
     await loadStats();
-
   }
 
 
-  // ==============================
-  // View Member
-  // ==============================
-
-  function viewMember(memberId) {
-
-    const member =
-      allMembers.find(
-        item => item.id === memberId
-      );
-
-
-    if (!member) {
-      return;
-    }
-
-
-    alert(
-
-      "Registration: " +
-      (member.registration_no || "") +
-
-      "\n\nName: " +
-      (member.full_name || "") +
-
-      "\n\nFather Name: " +
-      (member.father_name || "") +
-
-      "\n\nCNIC: " +
-      (member.cnic || "") +
-
-      "\n\nMobile: " +
-      (member.mobile || "") +
-
-      "\n\nSchool: " +
-      (member.school_name || "") +
-
-      "\n\nSEMIS Code: " +
-      (member.semis_code || "") +
-
-      "\n\nDesignation: " +
-      (member.designation || "") +
-
-      "\n\nBPS: " +
-      (member.bps || "") +
-
-      "\n\nJoining Date: " +
-      (member.joining_date || "") +
-
-      "\n\nAddress: " +
-      (member.address || "") +
-
-      "\n\nStatus: " +
-      (member.status || "")
-
-    );
-
-  }
-
-
-  // ==============================
-  // Members Buttons
-  // ==============================
-
-  if (loadMembersBtn) {
-
+  if (loadMembersBtn)
     loadMembersBtn.addEventListener(
       "click",
       loadMembers
     );
 
-  }
 
-
-  if (memberSearch) {
-
+  if (memberSearch)
     memberSearch.addEventListener(
       "input",
       filterMembers
     );
 
-  }
 
-
-  if (memberStatus) {
-
+  if (memberStatus)
     memberStatus.addEventListener(
       "change",
       filterMembers
     );
-
-  }
 
 
   if (membersTableBody) {
@@ -681,85 +391,648 @@ document.addEventListener("DOMContentLoaded", async () => {
       "click",
       async event => {
 
-
-        const button =
+        const approve =
           event.target.closest(
-            "button[data-action]"
+            "[data-member-approve]"
+          );
+
+        const reject =
+          event.target.closest(
+            "[data-member-reject]"
+          );
+
+        const view =
+          event.target.closest(
+            "[data-member-view]"
           );
 
 
-        if (!button) {
-          return;
-        }
+        if (approve) {
 
-
-        const memberId =
-          button.dataset.id;
-
-
-        const action =
-          button.dataset.action;
-
-
-        if (action === "view") {
-
-          viewMember(memberId);
-
-          return;
-        }
-
-
-        if (action === "approve") {
-
-          const confirmed =
+          if (
             confirm(
-              "Kya aap is member ko Approve karna chahte hain?"
+              "Approve this member?"
+            )
+          ) {
+
+            await changeMemberStatus(
+              approve.dataset.memberApprove,
+              "Approved"
+            );
+          }
+
+          return;
+        }
+
+
+        if (reject) {
+
+          if (
+            confirm(
+              "Reject this member?"
+            )
+          ) {
+
+            await changeMemberStatus(
+              reject.dataset.memberReject,
+              "Rejected"
+            );
+          }
+
+          return;
+        }
+
+
+        if (view) {
+
+          const member =
+            allMembers.find(
+              m =>
+                m.id ===
+                view.dataset.memberView
             );
 
 
-          if (!confirmed) {
-            return;
-          }
+          if (member) {
 
-
-          await updateMemberStatus(
-            memberId,
-            "Approved"
-          );
-
-          return;
-        }
-
-
-        if (action === "reject") {
-
-          const confirmed =
-            confirm(
-              "Kya aap is member ko Reject karna chahte hain?"
+            openDetails(
+              "Member Details",
+              member
             );
-
-
-          if (!confirmed) {
-            return;
           }
-
-
-          await updateMemberStatus(
-            memberId,
-            "Rejected"
-          );
-
         }
-
       }
     );
-
   }
 
 
-  // ==============================
-  // Login
-  // ==============================
+  /* =========================
+     UNIVERSAL DETAILS WINDOW
+  ========================= */
+
+  function openDetails(title, data) {
+
+    let modal =
+      document.getElementById(
+        "ytaUniversalModal"
+      );
+
+
+    if (!modal) {
+
+      modal =
+        document.createElement("div");
+
+      modal.id =
+        "ytaUniversalModal";
+
+      modal.style.cssText = `
+        position:fixed;
+        inset:0;
+        background:rgba(0,0,0,.55);
+        z-index:99999;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:20px;
+      `;
+
+      document.body.appendChild(modal);
+    }
+
+
+    let rows = "";
+
+
+    Object.entries(data || {})
+      .forEach(([key, value]) => {
+
+        if (
+          value !== null &&
+          value !== undefined &&
+          value !== ""
+        ) {
+
+          rows += `
+            <tr>
+              <th style="
+                text-align:left;
+                padding:10px;
+                border-bottom:1px solid #ddd;
+              ">
+                ${escapeHTML(
+                  key.replaceAll("_", " ")
+                )}
+              </th>
+
+              <td style="
+                padding:10px;
+                border-bottom:1px solid #ddd;
+              ">
+                ${escapeHTML(value)}
+              </td>
+            </tr>
+          `;
+        }
+      });
+
+
+    modal.innerHTML = `
+
+      <div style="
+        background:white;
+        width:min(900px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:14px;
+        padding:25px;
+      ">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-bottom:20px;
+        ">
+
+          <h2>
+            ${escapeHTML(title)}
+          </h2>
+
+          <button
+            id="ytaCloseModal">
+            Close
+          </button>
+
+        </div>
+
+
+        <table style="
+          width:100%;
+          border-collapse:collapse;
+        ">
+
+          ${rows}
+
+        </table>
+
+      </div>
+    `;
+
+
+    document
+      .getElementById("ytaCloseModal")
+      .onclick = () => modal.remove();
+  }
+
+
+  /* =========================
+     GENERIC TABLE VIEW
+  ========================= */
+
+  async function openTable(
+    tableName,
+    title,
+    columns
+  ) {
+
+    const { data, error } =
+      await supabaseClient
+        .from(tableName)
+        .select("*")
+        .order(
+          "created_at",
+          { ascending:false }
+        );
+
+
+    if (error) {
+
+      alert(
+        `${title}\n\n${error.message}`
+      );
+
+      return;
+    }
+
+
+    let modal =
+      document.getElementById(
+        "ytaUniversalModal"
+      );
+
+
+    if (modal)
+      modal.remove();
+
+
+    modal =
+      document.createElement("div");
+
+    modal.id =
+      "ytaUniversalModal";
+
+    modal.style.cssText = `
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    `;
+
+
+    let headers = "";
+
+    columns.forEach(column => {
+
+      headers += `
+        <th style="
+          padding:10px;
+          text-align:left;
+          background:#f1f5f9;
+        ">
+          ${escapeHTML(
+            column.label
+          )}
+        </th>
+      `;
+    });
+
+
+    let body = "";
+
+
+    (data || []).forEach(row => {
+
+      body += "<tr>";
+
+
+      columns.forEach(column => {
+
+        body += `
+          <td style="
+            padding:10px;
+            border-bottom:1px solid #ddd;
+          ">
+            ${escapeHTML(
+              row[column.key]
+            )}
+          </td>
+        `;
+      });
+
+
+      body += "</tr>";
+    });
+
+
+    if (!data || !data.length) {
+
+      body = `
+        <tr>
+          <td colspan="${columns.length}"
+            style="
+              padding:25px;
+              text-align:center;
+            ">
+            No records found.
+          </td>
+        </tr>
+      `;
+    }
+
+
+    modal.innerHTML = `
+
+      <div style="
+        background:white;
+        width:min(1100px,100%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:14px;
+        padding:25px;
+      ">
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          align-items:center;
+          margin-bottom:20px;
+        ">
+
+          <h2>
+            ${escapeHTML(title)}
+          </h2>
+
+          <button id="ytaCloseModal">
+            Close
+          </button>
+
+        </div>
+
+
+        <div style="
+          overflow-x:auto;
+        ">
+
+          <table style="
+            width:100%;
+            border-collapse:collapse;
+            min-width:700px;
+          ">
+
+            <thead>
+              <tr>
+                ${headers}
+              </tr>
+            </thead>
+
+            <tbody>
+              ${body}
+            </tbody>
+
+          </table>
+
+        </div>
+
+      </div>
+    `;
+
+
+    document.body.appendChild(modal);
+
+
+    document
+      .getElementById(
+        "ytaCloseModal"
+      )
+      .onclick = () =>
+        modal.remove();
+  }
+
+
+  /* =========================
+     OPEN OPTIONS
+  ========================= */
+
+  async function openCentral() {
+
+    await openTable(
+      "organization_settings",
+      "Central Organization",
+      [
+        {
+          key:"organization_name",
+          label:"Organization Name"
+        },
+        {
+          key:"organization_short_name",
+          label:"Short Name"
+        }
+      ]
+    );
+  }
+
+
+  async function openDivisions() {
+
+    await openTable(
+      "divisions",
+      "Divisions",
+      [
+        {
+          key:"name",
+          label:"Division Name"
+        },
+        {
+          key:"created_at",
+          label:"Created"
+        }
+      ]
+    );
+  }
+
+
+  async function openDistricts() {
+
+    await openTable(
+      "districts",
+      "Districts",
+      [
+        {
+          key:"name",
+          label:"District Name"
+        },
+        {
+          key:"division_id",
+          label:"Division ID"
+        }
+      ]
+    );
+  }
+
+
+  async function openTalukas() {
+
+    await openTable(
+      "talukas",
+      "Talukas",
+      [
+        {
+          key:"name",
+          label:"Taluka Name"
+        },
+        {
+          key:"district_id",
+          label:"District ID"
+        }
+      ]
+    );
+  }
+
+
+  async function openAdmins() {
+
+    await openTable(
+      "district_admins",
+      "District Admins",
+      [
+        {
+          key:"user_id",
+          label:"User ID"
+        },
+        {
+          key:"district_id",
+          label:"District ID"
+        },
+        {
+          key:"is_active",
+          label:"Active"
+        }
+      ]
+    );
+  }
+
+
+  async function openPositions() {
+
+    await openTable(
+      "dynamic_positions",
+      "Dynamic Positions",
+      [
+        {
+          key:"position_name",
+          label:"Position"
+        },
+        {
+          key:"level",
+          label:"Level"
+        },
+        {
+          key:"is_active",
+          label:"Active"
+        }
+      ]
+    );
+  }
+
+
+  async function openOfficeBearers() {
+
+    await openTable(
+      "dynamic_office_bearers",
+      "Dynamic Office Bearers",
+      [
+        {
+          key:"name",
+          label:"Name"
+        },
+        {
+          key:"father_name",
+          label:"Father Name"
+        },
+        {
+          key:"designation",
+          label:"Designation"
+        },
+        {
+          key:"bps",
+          label:"BPS"
+        },
+        {
+          key:"mobile",
+          label:"Mobile"
+        },
+        {
+          key:"is_active",
+          label:"Active"
+        }
+      ]
+    );
+  }
+
+
+  /* =========================
+     OPEN BUTTON DETECTION
+  ========================= */
+
+  document.addEventListener(
+    "click",
+    async event => {
+
+      const button =
+        event.target.closest("button");
+
+
+      if (!button) return;
+
+
+      const text =
+        button.textContent
+          .trim()
+          .toLowerCase();
+
+
+      if (text !== "open") return;
+
+
+      const parent =
+        button.closest(
+          ".nav-card, .card, .dashboard-card, .option-card"
+        );
+
+
+      const area =
+        (
+          parent?.innerText ||
+          button.parentElement?.innerText ||
+          ""
+        )
+          .toLowerCase();
+
+
+      if (
+        area.includes("central")
+      ) {
+
+        await openCentral();
+
+      } else if (
+        area.includes("division")
+      ) {
+
+        await openDivisions();
+
+      } else if (
+        area.includes("district")
+      ) {
+
+        await openDistricts();
+
+      } else if (
+        area.includes("taluka")
+      ) {
+
+        await openTalukas();
+
+      } else if (
+        area.includes("admin")
+      ) {
+
+        await openAdmins();
+
+      } else if (
+        area.includes("office bearer") ||
+        area.includes("office bearers")
+      ) {
+
+        await openOfficeBearers();
+
+      } else if (
+        area.includes("position")
+      ) {
+
+        await openPositions();
+
+      } else if (
+        area.includes("member")
+      ) {
+
+        if (loadMembersBtn) {
+          await loadMembers();
+        }
+      }
+
+    }
+  );
+
+
+  /* =========================
+     LOGIN
+  ========================= */
 
   if (loginForm) {
 
@@ -771,21 +1044,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const email =
-          document
-            .getElementById("email")
-            ?.value
-            .trim();
-
+          $("email")?.value.trim();
 
         const password =
-          document
-            .getElementById("password")
-            ?.value;
+          $("password")?.value;
 
 
         if (!email || !password) {
 
-          showMessage(
+          message(
             "Email aur password darj karein.",
             true
           );
@@ -794,7 +1061,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
-        showMessage(
+        message(
           "Login ho raha hai..."
         );
 
@@ -802,17 +1069,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         const { data, error } =
           await supabaseClient.auth
             .signInWithPassword({
-
-              email: email,
-
-              password: password
-
+              email,
+              password
             });
 
 
         if (error) {
 
-          showMessage(
+          message(
             error.message,
             true
           );
@@ -838,9 +1102,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             await supabaseClient.auth
               .signOut();
 
-
-            showMessage(
-              "Access denied. Central Owner account required.",
+            message(
+              "Central Owner access required.",
               true
             );
 
@@ -852,43 +1115,34 @@ document.addEventListener("DOMContentLoaded", async () => {
             data.user.email
           );
 
-
-          showMessage(
+          message(
             "Login successful."
           );
-
 
           await loadStats();
 
 
         } catch (error) {
 
-          console.error(
-            "Role verification:",
-            error
-          );
-
+          console.error(error);
 
           await supabaseClient.auth
             .signOut();
 
-
-          showMessage(
+          message(
             "User role verify nahi ho saka.",
             true
           );
-
         }
 
       }
     );
-
   }
 
 
-  // ==============================
-  // Logout
-  // ==============================
+  /* =========================
+     LOGOUT
+  ========================= */
 
   if (logoutBtn) {
 
@@ -899,94 +1153,71 @@ document.addEventListener("DOMContentLoaded", async () => {
         await supabaseClient.auth
           .signOut();
 
-
         showLogin();
-
-
-        showMessage(
-          "Logout successful."
-        );
 
       }
     );
-
   }
 
 
-  // ==============================
-  // Existing Session
-  // ==============================
+  /* =========================
+     EXISTING SESSION
+  ========================= */
 
   try {
 
     const {
-      data: sessionData,
-      error: sessionError
+      data,
+      error
     } =
       await supabaseClient.auth
         .getSession();
 
 
-    if (sessionError) {
-
-      console.error(
-        sessionError
-      );
-
-      return;
-    }
+    if (error)
+      throw error;
 
 
-    const session =
-      sessionData?.session;
+    if (data?.session) {
+
+      const profile =
+        await getUserProfile(
+          data.session.user.id
+        );
 
 
-    if (!session) {
+      if (
+        profile &&
+        profile.role ===
+          "central_owner"
+      ) {
 
-      showLogin();
+        showDashboard(
+          data.session.user.email
+        );
 
-      return;
-    }
+        await loadStats();
 
+      } else {
 
-    const profile =
-      await getUserProfile(
-        session.user.id
-      );
+        await supabaseClient.auth
+          .signOut();
 
-
-    if (
-      profile &&
-      profile.role ===
-        "central_owner"
-    ) {
-
-      showDashboard(
-        session.user.email
-      );
-
-
-      await loadStats();
+        showLogin();
+      }
 
     } else {
 
-      await supabaseClient.auth
-        .signOut();
-
-
       showLogin();
-
     }
+
 
   } catch (error) {
 
     console.error(
-      "Session error:",
+      "Session:",
       error
     );
-
-    await supabaseClient.auth
-      .signOut();
 
     showLogin();
 
