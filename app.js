@@ -1,16 +1,28 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
+  /* =========================================
+     SUPABASE
+  ========================================= */
+
   const supabaseClient = window.supabase.createClient(
     window.YTA_CONFIG.supabaseUrl,
     window.YTA_CONFIG.supabaseAnonKey
   );
 
+
+  /* =========================================
+     ELEMENT HELPER
+  ========================================= */
+
   const $ = (id) => document.getElementById(id);
+
 
   const loginForm = $("loginForm");
   const loginMessage = $("loginMessage");
+
   const dashboard = $("dashboard");
   const loginCard = document.querySelector(".login-card");
+
   const logoutBtn = $("logoutBtn");
   const userEmail = $("userEmail");
 
@@ -25,24 +37,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const membersTableBody = $("membersTableBody");
   const membersMessage = $("membersMessage");
 
+
   let allMembers = [];
 
 
-  /* =========================
+  /* =========================================
      BASIC HELPERS
-  ========================= */
+  ========================================= */
 
   function message(text, error = false) {
+
     if (!loginMessage) return;
 
     loginMessage.textContent = text;
+
     loginMessage.style.color =
       error ? "#b91c1c" : "#15803d";
   }
 
 
   function escapeHTML(value) {
-    if (value === null || value === undefined) return "";
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+      return "";
+    }
 
     return String(value)
       .replace(/&/g, "&amp;")
@@ -55,30 +76,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function showDashboard(email) {
 
-    if (loginCard)
+    if (loginCard) {
       loginCard.classList.add("hidden");
+    }
 
-    if (dashboard)
+    if (dashboard) {
       dashboard.classList.remove("hidden");
+    }
 
-    if (userEmail)
+    if (userEmail) {
       userEmail.textContent = email || "";
+    }
   }
 
 
   function showLogin() {
 
-    if (loginCard)
+    if (loginCard) {
       loginCard.classList.remove("hidden");
+    }
 
-    if (dashboard)
+    if (dashboard) {
       dashboard.classList.add("hidden");
+    }
+
+    if (userEmail) {
+      userEmail.textContent = "";
+    }
   }
 
 
-  /* =========================
-     USER ROLE
-  ========================= */
+  /* =========================================
+     USER PROFILE
+  ========================================= */
 
   async function getUserProfile(userId) {
 
@@ -89,15 +119,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         .eq("id", userId)
         .single();
 
-    if (error) throw error;
+    if (error) {
+      throw error;
+    }
 
     return data;
   }
 
 
-  /* =========================
+  /* =========================================
      STATISTICS
-  ========================= */
+  ========================================= */
 
   async function loadStats() {
 
@@ -111,6 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             head: true
           });
 
+
       const pending =
         await supabaseClient
           .from("members")
@@ -120,6 +153,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           })
           .eq("status", "Under Review");
 
+
       const approved =
         await supabaseClient
           .from("members")
@@ -128,6 +162,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             head: true
           })
           .eq("status", "Approved");
+
 
       const rejected =
         await supabaseClient
@@ -139,29 +174,43 @@ document.addEventListener("DOMContentLoaded", async () => {
           .eq("status", "Rejected");
 
 
-      if (totalMembers)
-        totalMembers.textContent = total.count ?? 0;
+      if (totalMembers) {
+        totalMembers.textContent =
+          total.count ?? 0;
+      }
 
-      if (pendingMembers)
-        pendingMembers.textContent = pending.count ?? 0;
 
-      if (approvedMembers)
-        approvedMembers.textContent = approved.count ?? 0;
+      if (pendingMembers) {
+        pendingMembers.textContent =
+          pending.count ?? 0;
+      }
 
-      if (rejectedMembers)
-        rejectedMembers.textContent = rejected.count ?? 0;
+
+      if (approvedMembers) {
+        approvedMembers.textContent =
+          approved.count ?? 0;
+      }
+
+
+      if (rejectedMembers) {
+        rejectedMembers.textContent =
+          rejected.count ?? 0;
+      }
 
     } catch (error) {
 
-      console.error("Statistics:", error);
+      console.error(
+        "Statistics error:",
+        error
+      );
 
     }
   }
 
 
-  /* =========================
+  /* =========================================
      MEMBERS
-  ========================= */
+  ========================================= */
 
   function renderMembers(members) {
 
@@ -169,11 +218,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     membersTableBody.innerHTML = "";
 
+
     if (!members.length) {
 
       membersTableBody.innerHTML = `
         <tr>
-          <td colspan="10" style="text-align:center;">
+          <td
+            colspan="10"
+            style="text-align:center;padding:25px;"
+          >
             No members found.
           </td>
         </tr>
@@ -185,27 +238,65 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     members.forEach(member => {
 
-      const row = document.createElement("tr");
+      const row =
+        document.createElement("tr");
+
 
       row.innerHTML = `
 
-        <td>${escapeHTML(member.registration_no)}</td>
+        <td>
+          ${escapeHTML(
+            member.registration_no
+          )}
+        </td>
 
-        <td>${escapeHTML(member.full_name)}</td>
+        <td>
+          ${escapeHTML(
+            member.full_name
+          )}
+        </td>
 
-        <td>${escapeHTML(member.father_name)}</td>
+        <td>
+          ${escapeHTML(
+            member.father_name
+          )}
+        </td>
 
-        <td>${escapeHTML(member.cnic)}</td>
+        <td>
+          ${escapeHTML(
+            member.cnic
+          )}
+        </td>
 
-        <td>${escapeHTML(member.mobile)}</td>
+        <td>
+          ${escapeHTML(
+            member.mobile
+          )}
+        </td>
 
-        <td>${escapeHTML(member.district_id)}</td>
+        <td>
+          ${escapeHTML(
+            member.district_id
+          )}
+        </td>
 
-        <td>${escapeHTML(member.taluka_id)}</td>
+        <td>
+          ${escapeHTML(
+            member.taluka_id
+          )}
+        </td>
 
-        <td>${escapeHTML(member.school_name)}</td>
+        <td>
+          ${escapeHTML(
+            member.school_name
+          )}
+        </td>
 
-        <td>${escapeHTML(member.status)}</td>
+        <td>
+          ${escapeHTML(
+            member.status
+          )}
+        </td>
 
         <td>
 
@@ -230,21 +321,26 @@ document.addEventListener("DOMContentLoaded", async () => {
         </td>
       `;
 
+
       membersTableBody.appendChild(row);
+
     });
+
   }
 
 
   async function loadMembers() {
 
-    if (!membersTableBody) return;
-
-    if (membersMessage)
+    if (membersMessage) {
       membersMessage.textContent =
         "Loading members...";
+    }
 
 
-    const { data, error } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient
         .from("members")
         .select(`
@@ -268,18 +364,25 @@ document.addEventListener("DOMContentLoaded", async () => {
           created_at,
           updated_at
         `)
-        .order("created_at", {
-          ascending: false
-        });
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
 
 
     if (error) {
 
-      console.error(error);
+      console.error(
+        "Members error:",
+        error
+      );
 
-      if (membersMessage)
+      if (membersMessage) {
         membersMessage.textContent =
           error.message;
+      }
 
       return;
     }
@@ -287,29 +390,44 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     allMembers = data || [];
 
-    if (membersMessage)
+
+    if (membersMessage) {
+
       membersMessage.textContent =
         `${allMembers.length} members loaded.`;
+    }
 
-    renderMembers(allMembers);
+
+    if (membersTableBody) {
+
+      renderMembers(allMembers);
+
+    }
+
   }
 
 
   function filterMembers() {
 
     const search =
-      (memberSearch?.value || "")
+      (
+        memberSearch?.value ||
+        ""
+      )
         .toLowerCase()
         .trim();
 
+
     const status =
-      memberStatus?.value || "";
+      memberStatus?.value ||
+      "";
 
 
     const result =
       allMembers.filter(member => {
 
         const text = [
+
           member.registration_no,
           member.full_name,
           member.father_name,
@@ -318,6 +436,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           member.school_name,
           member.semis_code,
           member.designation
+
         ]
           .filter(Boolean)
           .join(" ")
@@ -325,13 +444,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         return (
-          (!search || text.includes(search)) &&
-          (!status || member.status === status)
+
+          (!search ||
+            text.includes(search))
+
+          &&
+
+          (!status ||
+            member.status === status)
+
         );
+
       });
 
 
     renderMembers(result);
+
   }
 
 
@@ -340,13 +468,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     status
   ) {
 
-    const { error } =
+    const {
+      error
+    } =
       await supabaseClient
         .from("members")
         .update({
+
           status: status,
+
           updated_at:
             new Date().toISOString()
+
         })
         .eq("id", id);
 
@@ -360,29 +493,44 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     await loadMembers();
+
     await loadStats();
+
   }
 
 
-  if (loadMembersBtn)
+  /* =========================================
+     MEMBER EVENTS
+  ========================================= */
+
+  if (loadMembersBtn) {
+
     loadMembersBtn.addEventListener(
       "click",
       loadMembers
     );
 
+  }
 
-  if (memberSearch)
+
+  if (memberSearch) {
+
     memberSearch.addEventListener(
       "input",
       filterMembers
     );
 
+  }
 
-  if (memberStatus)
+
+  if (memberStatus) {
+
     memberStatus.addEventListener(
       "change",
       filterMembers
     );
+
+  }
 
 
   if (membersTableBody) {
@@ -396,10 +544,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             "[data-member-approve]"
           );
 
+
         const reject =
           event.target.closest(
             "[data-member-reject]"
           );
+
 
         const view =
           event.target.closest(
@@ -419,6 +569,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               approve.dataset.memberApprove,
               "Approved"
             );
+
           }
 
           return;
@@ -437,6 +588,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               reject.dataset.memberReject,
               "Rejected"
             );
+
           }
 
           return;
@@ -447,8 +599,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           const member =
             allMembers.find(
-              m =>
-                m.id ===
+              item =>
+                item.id ===
                 view.dataset.memberView
             );
 
@@ -459,136 +611,179 @@ document.addEventListener("DOMContentLoaded", async () => {
               "Member Details",
               member
             );
+
           }
+
         }
+
       }
     );
+
   }
 
 
-  /* =========================
-     UNIVERSAL DETAILS WINDOW
-  ========================= */
+  /* =========================================
+     DETAILS MODAL
+  ========================================= */
 
-  function openDetails(title, data) {
+  function openDetails(
+    title,
+    data
+  ) {
 
-    let modal =
+    const oldModal =
       document.getElementById(
         "ytaUniversalModal"
       );
 
 
-    if (!modal) {
-
-      modal =
-        document.createElement("div");
-
-      modal.id =
-        "ytaUniversalModal";
-
-      modal.style.cssText = `
-        position:fixed;
-        inset:0;
-        background:rgba(0,0,0,.55);
-        z-index:99999;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        padding:20px;
-      `;
-
-      document.body.appendChild(modal);
+    if (oldModal) {
+      oldModal.remove();
     }
+
+
+    const modal =
+      document.createElement("div");
+
+
+    modal.id =
+      "ytaUniversalModal";
+
+
+    modal.style.cssText = `
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:99999;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+    `;
 
 
     let rows = "";
 
 
     Object.entries(data || {})
-      .forEach(([key, value]) => {
+      .forEach(
+        ([key, value]) => {
 
-        if (
-          value !== null &&
-          value !== undefined &&
-          value !== ""
-        ) {
+          if (
+            value !== null &&
+            value !== undefined &&
+            value !== ""
+          ) {
 
-          rows += `
-            <tr>
-              <th style="
-                text-align:left;
-                padding:10px;
-                border-bottom:1px solid #ddd;
-              ">
-                ${escapeHTML(
-                  key.replaceAll("_", " ")
-                )}
-              </th>
+            rows += `
 
-              <td style="
-                padding:10px;
-                border-bottom:1px solid #ddd;
-              ">
-                ${escapeHTML(value)}
-              </td>
-            </tr>
-          `;
+              <tr>
+
+                <th
+                  style="
+                    text-align:left;
+                    padding:10px;
+                    border-bottom:1px solid #ddd;
+                  "
+                >
+                  ${escapeHTML(
+                    key.replaceAll(
+                      "_",
+                      " "
+                    )
+                  )}
+                </th>
+
+                <td
+                  style="
+                    padding:10px;
+                    border-bottom:1px solid #ddd;
+                  "
+                >
+                  ${escapeHTML(
+                    value
+                  )}
+                </td>
+
+              </tr>
+
+            `;
+
+          }
+
         }
-      });
+      );
 
 
     modal.innerHTML = `
 
-      <div style="
-        background:white;
-        width:min(900px,100%);
-        max-height:90vh;
-        overflow:auto;
-        border-radius:14px;
-        padding:25px;
-      ">
+      <div
+        style="
+          background:white;
+          width:min(900px,100%);
+          max-height:90vh;
+          overflow:auto;
+          border-radius:14px;
+          padding:25px;
+        "
+      >
 
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          margin-bottom:20px;
-        ">
+        <div
+          style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
+          "
+        >
 
           <h2>
             ${escapeHTML(title)}
           </h2>
 
           <button
-            id="ytaCloseModal">
+            id="ytaCloseModal"
+          >
             Close
           </button>
 
         </div>
 
 
-        <table style="
-          width:100%;
-          border-collapse:collapse;
-        ">
+        <table
+          style="
+            width:100%;
+            border-collapse:collapse;
+          "
+        >
 
           ${rows}
 
         </table>
 
       </div>
+
     `;
 
 
+    document.body.appendChild(
+      modal
+    );
+
+
     document
-      .getElementById("ytaCloseModal")
-      .onclick = () => modal.remove();
+      .getElementById(
+        "ytaCloseModal"
+      )
+      .onclick = () =>
+        modal.remove();
+
   }
 
 
-  /* =========================
-     GENERIC TABLE VIEW
-  ========================= */
+  /* =========================================
+     GENERIC TABLE
+  ========================================= */
 
   async function openTable(
     tableName,
@@ -596,14 +791,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     columns
   ) {
 
-    const { data, error } =
+    const {
+      data,
+      error
+    } =
       await supabaseClient
         .from(tableName)
-        .select("*")
-        .order(
-          "created_at",
-          { ascending:false }
-        );
+        .select("*");
 
 
     if (error) {
@@ -616,21 +810,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    let modal =
+    const oldModal =
       document.getElementById(
         "ytaUniversalModal"
       );
 
 
-    if (modal)
-      modal.remove();
+    if (oldModal) {
+      oldModal.remove();
+    }
 
 
-    modal =
+    const modal =
       document.createElement("div");
+
 
     modal.id =
       "ytaUniversalModal";
+
 
     modal.style.cssText = `
       position:fixed;
@@ -646,109 +843,152 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let headers = "";
 
-    columns.forEach(column => {
 
-      headers += `
-        <th style="
-          padding:10px;
-          text-align:left;
-          background:#f1f5f9;
-        ">
-          ${escapeHTML(
-            column.label
-          )}
-        </th>
-      `;
-    });
+    columns.forEach(
+      column => {
+
+        headers += `
+
+          <th
+            style="
+              padding:10px;
+              text-align:left;
+              background:#f1f5f9;
+            "
+          >
+            ${escapeHTML(
+              column.label
+            )}
+          </th>
+
+        `;
+
+      }
+    );
 
 
     let body = "";
 
 
-    (data || []).forEach(row => {
+    (data || []).forEach(
+      row => {
 
-      body += "<tr>";
-
-
-      columns.forEach(column => {
-
-        body += `
-          <td style="
-            padding:10px;
-            border-bottom:1px solid #ddd;
-          ">
-            ${escapeHTML(
-              row[column.key]
-            )}
-          </td>
-        `;
-      });
+        body += "<tr>";
 
 
-      body += "</tr>";
-    });
+        columns.forEach(
+          column => {
+
+            body += `
+
+              <td
+                style="
+                  padding:10px;
+                  border-bottom:1px solid #ddd;
+                "
+              >
+                ${escapeHTML(
+                  row[column.key]
+                )}
+              </td>
+
+            `;
+
+          }
+        );
 
 
-    if (!data || !data.length) {
+        body += "</tr>";
+
+      }
+    );
+
+
+    if (
+      !data ||
+      !data.length
+    ) {
 
       body = `
+
         <tr>
-          <td colspan="${columns.length}"
+
+          <td
+            colspan="${columns.length}"
             style="
-              padding:25px;
+              padding:30px;
               text-align:center;
-            ">
+              color:#64748b;
+            "
+          >
             No records found.
           </td>
+
         </tr>
+
       `;
+
     }
 
 
     modal.innerHTML = `
 
-      <div style="
-        background:white;
-        width:min(1100px,100%);
-        max-height:90vh;
-        overflow:auto;
-        border-radius:14px;
-        padding:25px;
-      ">
+      <div
+        style="
+          background:white;
+          width:min(1100px,100%);
+          max-height:90vh;
+          overflow:auto;
+          border-radius:14px;
+          padding:25px;
+        "
+      >
 
-        <div style="
-          display:flex;
-          justify-content:space-between;
-          align-items:center;
-          margin-bottom:20px;
-        ">
+        <div
+          style="
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            margin-bottom:20px;
+          "
+        >
 
           <h2>
             ${escapeHTML(title)}
           </h2>
 
-          <button id="ytaCloseModal">
+
+          <button
+            id="ytaCloseModal"
+          >
             Close
           </button>
 
         </div>
 
 
-        <div style="
-          overflow-x:auto;
-        ">
+        <div
+          style="
+            overflow-x:auto;
+          "
+        >
 
-          <table style="
-            width:100%;
-            border-collapse:collapse;
-            min-width:700px;
-          ">
+          <table
+            style="
+              width:100%;
+              border-collapse:collapse;
+              min-width:700px;
+            "
+          >
 
             <thead>
+
               <tr>
                 ${headers}
               </tr>
+
             </thead>
+
 
             <tbody>
               ${body}
@@ -759,10 +999,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
       </div>
+
     `;
 
 
-    document.body.appendChild(modal);
+    document.body.appendChild(
+      modal
+    );
 
 
     document
@@ -771,12 +1014,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       )
       .onclick = () =>
         modal.remove();
+
   }
 
 
-  /* =========================
-     OPEN OPTIONS
-  ========================= */
+  /* =========================================
+     CENTRAL
+  ========================================= */
 
   async function openCentral() {
 
@@ -784,18 +1028,37 @@ document.addEventListener("DOMContentLoaded", async () => {
       "organization_settings",
       "Central Organization",
       [
+
         {
-          key:"organization_name",
-          label:"Organization Name"
+          key:
+            "organization_name",
+          label:
+            "Organization Name"
         },
+
         {
-          key:"organization_short_name",
-          label:"Short Name"
+          key:
+            "organization_short_name",
+          label:
+            "Short Name"
+        },
+
+        {
+          key:
+            "updated_at",
+          label:
+            "Updated"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     DIVISIONS
+  ========================================= */
 
   async function openDivisions() {
 
@@ -803,18 +1066,26 @@ document.addEventListener("DOMContentLoaded", async () => {
       "divisions",
       "Divisions",
       [
+
         {
           key:"name",
           label:"Division Name"
         },
+
         {
           key:"created_at",
           label:"Created"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     DISTRICTS
+  ========================================= */
 
   async function openDistricts() {
 
@@ -822,18 +1093,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       "districts",
       "Districts",
       [
+
         {
           key:"name",
           label:"District Name"
         },
+
         {
           key:"division_id",
           label:"Division ID"
+        },
+
+        {
+          key:"created_at",
+          label:"Created"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     TALUKAS
+  ========================================= */
 
   async function openTalukas() {
 
@@ -841,18 +1125,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       "talukas",
       "Talukas",
       [
+
         {
           key:"name",
           label:"Taluka Name"
         },
+
         {
           key:"district_id",
           label:"District ID"
+        },
+
+        {
+          key:"created_at",
+          label:"Created"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     DISTRICT ADMINS
+  ========================================= */
 
   async function openAdmins() {
 
@@ -860,22 +1157,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       "district_admins",
       "District Admins",
       [
+
         {
           key:"user_id",
           label:"User ID"
         },
+
         {
           key:"district_id",
           label:"District ID"
         },
+
         {
           key:"is_active",
           label:"Active"
+        },
+
+        {
+          key:"created_at",
+          label:"Created"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     DYNAMIC POSITIONS
+  ========================================= */
 
   async function openPositions() {
 
@@ -883,22 +1194,44 @@ document.addEventListener("DOMContentLoaded", async () => {
       "dynamic_positions",
       "Dynamic Positions",
       [
+
         {
-          key:"position_name",
-          label:"Position"
+          key:
+            "position_name",
+          label:
+            "Position"
         },
+
         {
-          key:"level",
-          label:"Level"
+          key:
+            "level",
+          label:
+            "Level"
         },
+
         {
-          key:"is_active",
-          label:"Active"
+          key:
+            "is_active",
+          label:
+            "Active"
+        },
+
+        {
+          key:
+            "created_at",
+          label:
+            "Created"
         }
+
       ]
     );
+
   }
 
+
+  /* =========================================
+     OFFICE BEARERS
+  ========================================= */
 
   async function openOfficeBearers() {
 
@@ -906,45 +1239,147 @@ document.addEventListener("DOMContentLoaded", async () => {
       "dynamic_office_bearers",
       "Dynamic Office Bearers",
       [
+
         {
           key:"name",
           label:"Name"
         },
+
         {
           key:"father_name",
           label:"Father Name"
         },
+
         {
           key:"designation",
           label:"Designation"
         },
+
         {
           key:"bps",
           label:"BPS"
         },
+
         {
           key:"mobile",
           label:"Mobile"
         },
+
         {
           key:"is_active",
           label:"Active"
+        },
+
+        {
+          key:"created_at",
+          label:"Created"
         }
+
       ]
     );
+
   }
 
 
-  /* =========================
-     OPEN BUTTON DETECTION
-  ========================= */
+  /* =========================================
+     MEMBERS OPEN
+  ========================================= */
+
+  async function openMembers() {
+
+    await openTable(
+      "members",
+      "Members Management",
+      [
+
+        {
+          key:
+            "registration_no",
+          label:
+            "Registration"
+        },
+
+        {
+          key:
+            "full_name",
+          label:
+            "Name"
+        },
+
+        {
+          key:
+            "father_name",
+          label:
+            "Father Name"
+        },
+
+        {
+          key:
+            "cnic",
+          label:
+            "CNIC"
+        },
+
+        {
+          key:
+            "mobile",
+          label:
+            "Mobile"
+        },
+
+        {
+          key:
+            "division_id",
+          label:
+            "Division ID"
+        },
+
+        {
+          key:
+            "district_id",
+          label:
+            "District ID"
+        },
+
+        {
+          key:
+            "taluka_id",
+          label:
+            "Taluka ID"
+        },
+
+        {
+          key:
+            "school_name",
+          label:
+            "School"
+        },
+
+        {
+          key:
+            "status",
+          label:
+            "Status"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================================
+     OPEN BUTTON HANDLER
+  ========================================= */
 
   document.addEventListener(
     "click",
     async event => {
 
       const button =
-        event.target.closest("button");
+        event.target.closest(
+          "button"
+        );
 
 
       if (!button) return;
@@ -956,7 +1391,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           .toLowerCase();
 
 
-      if (text !== "open") return;
+      if (text !== "open") {
+        return;
+      }
 
 
       const parent =
@@ -970,69 +1407,98 @@ document.addEventListener("DOMContentLoaded", async () => {
           parent?.innerText ||
           button.parentElement?.innerText ||
           ""
-        )
-          .toLowerCase();
+        ).toLowerCase();
 
 
-      if (
-        area.includes("central")
-      ) {
+      try {
 
-        await openCentral();
+        if (
+          area.includes("central")
+        ) {
 
-      } else if (
-        area.includes("division")
-      ) {
+          await openCentral();
 
-        await openDivisions();
-
-      } else if (
-        area.includes("district")
-      ) {
-
-        await openDistricts();
-
-      } else if (
-        area.includes("taluka")
-      ) {
-
-        await openTalukas();
-
-      } else if (
-        area.includes("admin")
-      ) {
-
-        await openAdmins();
-
-      } else if (
-        area.includes("office bearer") ||
-        area.includes("office bearers")
-      ) {
-
-        await openOfficeBearers();
-
-      } else if (
-        area.includes("position")
-      ) {
-
-        await openPositions();
-
-      } else if (
-        area.includes("member")
-      ) {
-
-        if (loadMembersBtn) {
-          await loadMembers();
         }
+
+        else if (
+          area.includes("division")
+        ) {
+
+          await openDivisions();
+
+        }
+
+        else if (
+          area.includes("district")
+        ) {
+
+          await openDistricts();
+
+        }
+
+        else if (
+          area.includes("taluka")
+        ) {
+
+          await openTalukas();
+
+        }
+
+        else if (
+          area.includes("office bearer")
+        ) {
+
+          await openOfficeBearers();
+
+        }
+
+        else if (
+          area.includes("position")
+        ) {
+
+          await openPositions();
+
+        }
+
+        else if (
+          area.includes("admin")
+        ) {
+
+          await openAdmins();
+
+        }
+
+        else if (
+          area.includes("member")
+        ) {
+
+          await openMembers();
+
+        }
+
+      }
+
+      catch (error) {
+
+        console.error(
+          "Open button error:",
+          error
+        );
+
+        alert(
+          error.message ||
+          "Unable to open this section."
+        );
+
       }
 
     }
   );
 
 
-  /* =========================
+  /* =========================================
      LOGIN
-  ========================= */
+  ========================================= */
 
   if (loginForm) {
 
@@ -1046,11 +1512,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         const email =
           $("email")?.value.trim();
 
+
         const password =
           $("password")?.value;
 
 
-        if (!email || !password) {
+        if (
+          !email ||
+          !password
+        ) {
 
           message(
             "Email aur password darj karein.",
@@ -1066,11 +1536,16 @@ document.addEventListener("DOMContentLoaded", async () => {
         );
 
 
-        const { data, error } =
+        const {
+          data,
+          error
+        } =
           await supabaseClient.auth
             .signInWithPassword({
+
               email,
               password
+
             });
 
 
@@ -1102,6 +1577,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             await supabaseClient.auth
               .signOut();
 
+
             message(
               "Central Owner access required.",
               true
@@ -1115,34 +1591,44 @@ document.addEventListener("DOMContentLoaded", async () => {
             data.user.email
           );
 
+
           message(
             "Login successful."
           );
 
+
           await loadStats();
 
+        }
 
-        } catch (error) {
+        catch (error) {
 
-          console.error(error);
+          console.error(
+            "Role verification:",
+            error
+          );
+
 
           await supabaseClient.auth
             .signOut();
+
 
           message(
             "User role verify nahi ho saka.",
             true
           );
+
         }
 
       }
     );
+
   }
 
 
-  /* =========================
+  /* =========================================
      LOGOUT
-  ========================= */
+  ========================================= */
 
   if (logoutBtn) {
 
@@ -1157,12 +1643,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       }
     );
+
   }
 
 
-  /* =========================
+  /* =========================================
      EXISTING SESSION
-  ========================= */
+  ========================================= */
 
   try {
 
@@ -1174,11 +1661,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         .getSession();
 
 
-    if (error)
+    if (error) {
       throw error;
+    }
 
 
-    if (data?.session) {
+    if (
+      data &&
+      data.session
+    ) {
 
       const profile =
         await getUserProfile(
@@ -1196,26 +1687,34 @@ document.addEventListener("DOMContentLoaded", async () => {
           data.session.user.email
         );
 
+
         await loadStats();
 
-      } else {
+      }
+
+      else {
 
         await supabaseClient.auth
           .signOut();
 
         showLogin();
+
       }
 
-    } else {
-
-      showLogin();
     }
 
+    else {
 
-  } catch (error) {
+      showLogin();
+
+    }
+
+  }
+
+  catch (error) {
 
     console.error(
-      "Session:",
+      "Session error:",
       error
     );
 
