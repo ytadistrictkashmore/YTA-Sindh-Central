@@ -61,7 +61,65 @@
     </section>
 
     <section id="dashboard" class="dashboard hidden">
+      
+<div class="members-section">
 
+  <div class="section-header">
+    <div>
+      <h2>Members Management</h2>
+      <p>YTA Sindh Central Secretariat</p>
+    </div>
+
+    <button id="loadMembersBtn">
+      Load Members
+    </button>
+  </div>
+
+  <div class="member-tools">
+
+    <input
+      type="text"
+      id="memberSearch"
+      placeholder="Search Name, Registration, CNIC, Mobile..."
+    >
+
+    <select id="memberStatus">
+      <option value="">All Status</option>
+      <option value="Under Review">Under Review</option>
+      <option value="Approved">Approved</option>
+      <option value="Rejected">Rejected</option>
+    </select>
+
+  </div>
+
+  <div id="membersMessage"></div>
+
+  <div class="members-table-wrapper">
+
+    <table class="members-table">
+
+      <thead>
+        <tr>
+          <th>Registration</th>
+          <th>Name</th>
+          <th>Father Name</th>
+          <th>CNIC</th>
+          <th>Mobile</th>
+          <th>District</th>
+          <th>Taluka</th>
+          <th>School</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+
+      <tbody id="membersTableBody"></tbody>
+
+    </table>
+
+  </div>
+
+</div>
       <div class="dashboard-header">
         <div>
           <h2>Central Owner Dashboard</h2>
