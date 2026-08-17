@@ -1,323 +1,97 @@
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
 
-  // Wait for Supabase library
-  if (!window.supabase) {
-    const script = document.createElement("script");
+  const supabaseClient = window.supabase.createClient(
+    window.YTA_CONFIG.supabaseUrl,
+    window.YTA_CONFIG.supabaseAnonKey
+  );
 
-    script.src =
-      "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+  const loginForm = document.getElementById("loginForm");
+  const loginMessage = document.getElementById("loginMessage");
 
-    script.onload = () => startApp();
-    script.onerror = () => {
-      alert("Supabase library load nahi ho saki.");
-    };
+  const dashboard = document.getElementById("dashboard");
+  const loginCard = document.querySelector(".login-card");
 
-    document.head.appendChild(script);
+  const logoutBtn = document.getElementById("logoutBtn");
+  const userEmail = document.getElementById("userEmail");
 
-    return;
+  const totalMembers = document.getElementById("totalMembers");
+  const pendingMembers = document.getElementById("pendingMembers");
+  const approvedMembers = document.getElementById("approvedMembers");
+  const rejectedMembers = document.getElementById("rejectedMembers");
+
+  const loadMembersBtn =
+    document.getElementById("loadMembersBtn");
+
+  const memberSearch =
+    document.getElementById("memberSearch");
+
+  const memberStatus =
+    document.getElementById("memberStatus");
+
+  const membersTableBody =
+    document.getElementById("membersTableBody");
+
+  const membersMessage =
+    document.getElementById("membersMessage");
+
+
+  let allMembers = [];
+
+
+  function showMessage(text, error = false) {
+
+    if (!loginMessage) return;
+
+    loginMessage.textContent = text;
+
+    loginMessage.style.color =
+      error ? "#b91c1c" : "#15803d";
   }
 
-  startApp();
 
+  function showDashboard(email) {
 
-  async function startApp() {
-
-    const supabaseClient = window.supabase.createClient(
-      window.YTA_CONFIG.supabaseUrl,
-      window.YTA_CONFIG.supabaseAnonKey
-    );
-
-
-    const loginForm =
-      document.getElementById("loginForm");
-
-    const loginMessage =
-      document.getElementById("loginMessage");
-
-    const dashboard =
-      document.getElementById("dashboard");
-
-    const loginCard =
-      document.querySelector(".login-card");
-
-    const logoutBtn =
-      document.getElementById("logoutBtn");
-
-    const userEmail =
-      document.getElementById("userEmail");
-
-    const totalMembers =
-      document.getElementById("totalMembers");
-
-    const pendingMembers =
-      document.getElementById("pendingMembers");
-
-    const approvedMembers =
-      document.getElementById("approvedMembers");
-
-    const rejectedMembers =
-      document.getElementById("rejectedMembers");
-
-
-    function message(text, error = false) {
-
-      loginMessage.textContent = text;
-
-      loginMessage.style.color =
-        error ? "#b91c1c" : "#15803d";
-    }
-
-
-    function showDashboard(email) {
-
+    if (loginCard) {
       loginCard.classList.add("hidden");
+    }
 
+    if (dashboard) {
       dashboard.classList.remove("hidden");
-
-      userEmail.textContent = email;
     }
 
-
-    function showLogin() {
-
-      loginCard.classList.remove("hidden");
-
-      dashboard.classList.add("hidden");
-
-      userEmail.textContent = "";
+    if (userEmail) {
+      userEmail.textContent = email || "";
     }
-
-
-    async function getRole(userId) {
-
-      const { data, error } =
-        await supabaseClient
-          .from("user_profiles")
-          .select("role, full_name")
-          .eq("id", userId)
-          .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    }
-
-
-    async function loadStats() {
-
-      const total =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          });
-
-      const pending =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Under Review");
-
-      const approved =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Approved");
-
-      const rejected =
-        await supabaseClient
-          .from("members")
-          .select("*", {
-            count: "exact",
-            head: true
-          })
-          .eq("status", "Rejected");
-
-
-      totalMembers.textContent =
-        total.count ?? 0;
-
-      pendingMembers.textContent =
-        pending.count ?? 0;
-
-      approvedMembers.textContent =
-        approved.count ?? 0;
-
-      rejectedMembers.textContent =
-        rejected.count ?? 0;
-    }
-
-
-    loginForm.addEventListener(
-      "submit",
-      async (event) => {
-
-        event.preventDefault();
-
-        const email =
-          document.getElementById("email")
-            .value.trim();
-
-        const password =
-          document.getElementById("password")
-            .value;
-
-
-        if (!email || !password) {
-
-          message(
-            "Email aur password darj karein.",
-            true
-          );
-
-          return;
-        }
-
-
-        message("Login ho raha hai...");
-
-
-        const { data, error } =
-          await supabaseClient.auth
-            .signInWithPassword({
-              email,
-              password
-            });
-
-
-        if (error) {
-
-          message(
-            error.message,
-            true
-          );
-
-          return;
-        }
-
-
-        try {
-
-          const profile =
-            await getRole(data.user.id);
-
-
-          if (
-            !profile ||
-            profile.role !== "central_owner"
-          ) {
-
-            await supabaseClient.auth.signOut();
-
-            message(
-              "Access denied. Ye Central Owner account nahi hai.",
-              true
-            );
-
-            return;
-          }
-
-
-          showDashboard(
-            data.user.email
-          );
-
-          await loadStats();
-
-        }
-
-        catch (err) {
-
-          console.error(err);
-
-          await supabaseClient.auth.signOut();
-
-          message(
-            "User role verify nahi ho saka.",
-            true
-          );
-        }
-
-      }
-    );
-
-
-    logoutBtn.addEventListener(
-      "click",
-      async () => {
-
-        await supabaseClient.auth.signOut();
-
-        showLogin();
-
-        message(
-          "Logout successful."
-        );
-      }
-    );
-
-
-    // Check existing login
-    const {
-      data: sessionData
-    } = await supabaseClient.auth
-      .getSession();
-
-
-    if (
-      sessionData &&
-      sessionData.session
-    ) {
-
-      try {
-
-        const profile =
-          await getRole(
-            sessionData.session.user.id
-          );
-
-
-        if (
-          profile &&
-          profile.role === "central_owner"
-        ) {
-
-          showDashboard(
-            sessionData.session.user.email
-          );
-
-          await loadStats();
-
-        }
-
-        else {
-
-          await supabaseClient.auth.signOut();
-
-          showLogin();
-        }
-
-      }
-
-      catch (error) {
-
-        console.error(error);
-
-        await supabaseClient.auth.signOut();
-
-        showLogin();
-      }
-    }
-
   }
 
-});
+
+  function showLogin() {
+
+    if (loginCard) {
+      loginCard.classList.remove("hidden");
+    }
+
+    if (dashboard) {
+      dashboard.classList.add("hidden");
+    }
+  }
+
+
+  async function getUserProfile(userId) {
+
+    const { data, error } =
+      await supabaseClient
+        .from("user_profiles")
+        .select("id, full_name, role")
+        .eq("id", userId)
+        .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return data;
+  }
+
+
+  async function
