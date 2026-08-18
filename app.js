@@ -7,6 +7,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const $ = (id) => document.getElementById(id);
 
+  /* =========================
+     ELEMENTS
+  ========================= */
+
   const loginForm = $("loginForm");
   const loginMessage = $("loginMessage");
   const dashboard = $("dashboard");
@@ -25,13 +29,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   const memberStatus = $("memberStatus");
   const membersTableBody = $("membersTableBody");
   const membersMessage = $("membersMessage");
+  const membersSection = document.querySelector(".members-section");
 
   let allMembers = [];
 
 
   /* =========================
-     HELPERS
-  ========================== */
+     MESSAGE
+  ========================= */
 
   function message(text, error = false) {
 
@@ -43,6 +48,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       error ? "#b91c1c" : "#15803d";
   }
 
+
+  /* =========================
+     ESCAPE HTML
+  ========================= */
 
   function escapeHTML(value) {
 
@@ -62,6 +71,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  /* =========================
+     LOGIN / DASHBOARD
+  ========================= */
+
   function showDashboard(email) {
 
     if (loginCard) {
@@ -73,8 +86,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     if (userEmail) {
-      userEmail.textContent =
-        email || "";
+      userEmail.textContent = email || "";
     }
   }
 
@@ -93,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      USER PROFILE
-  ========================== */
+  ========================= */
 
   async function getUserProfile(userId) {
 
@@ -102,9 +114,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       error
     } = await supabaseClient
       .from("user_profiles")
-      .select(
-        "id, full_name, role"
-      )
+      .select("id, full_name, role")
       .eq("id", userId)
       .single();
 
@@ -118,7 +128,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      STATISTICS
-  ========================== */
+  ========================= */
 
   async function loadStats() {
 
@@ -177,25 +187,29 @@ document.addEventListener("DOMContentLoaded", async () => {
           total.count ?? 0;
       }
 
+
       if (pendingMembers) {
         pendingMembers.textContent =
           pending.count ?? 0;
       }
+
 
       if (approvedMembers) {
         approvedMembers.textContent =
           approved.count ?? 0;
       }
 
+
       if (rejectedMembers) {
         rejectedMembers.textContent =
           rejected.count ?? 0;
       }
 
+
     } catch (error) {
 
       console.error(
-        "Statistics error:",
+        "Statistics Error:",
         error
       );
 
@@ -204,14 +218,15 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =========================
-     MEMBERS
-  ========================== */
+     MEMBERS TABLE
+  ========================= */
 
   function renderMembers(members) {
 
     if (!membersTableBody) {
       return;
     }
+
 
     membersTableBody.innerHTML = "";
 
@@ -222,7 +237,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         <tr>
           <td
             colspan="10"
-            style="text-align:center;padding:25px;"
+            style="
+              text-align:center;
+              padding:25px;
+            "
           >
             No members found.
           </td>
@@ -298,21 +316,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         <td>
 
           <button
-            type="button"
+            class="view-btn"
             data-member-view="${member.id}"
           >
             View
           </button>
 
           <button
-            type="button"
+            class="approve-btn"
             data-member-approve="${member.id}"
           >
             Approve
           </button>
 
           <button
-            type="button"
+            class="reject-btn"
             data-member-reject="${member.id}"
           >
             Reject
@@ -329,6 +347,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  /* =========================
+     LOAD MEMBERS
+  ========================= */
+
   async function loadMembers() {
 
     if (!membersTableBody) {
@@ -337,52 +359,54 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (membersMessage) {
+
       membersMessage.textContent =
         "Loading members...";
+
     }
 
 
     const {
       data,
       error
-    } =
-      await supabaseClient
-        .from("members")
-        .select(`
-          id,
-          registration_no,
-          full_name,
-          father_name,
-          cnic,
-          mobile,
-          division_id,
-          district_id,
-          taluka_id,
-          school_name,
-          semis_code,
-          designation,
-          bps,
-          joining_date,
-          address,
-          photo_url,
-          status,
-          created_at,
-          updated_at
-        `)
-        .order(
-          "created_at",
-          {
-            ascending: false
-          }
-        );
+    } = await supabaseClient
+      .from("members")
+      .select(`
+        id,
+        registration_no,
+        full_name,
+        father_name,
+        cnic,
+        mobile,
+        division_id,
+        district_id,
+        taluka_id,
+        school_name,
+        semis_code,
+        designation,
+        bps,
+        joining_date,
+        address,
+        photo_url,
+        status,
+        created_at,
+        updated_at
+      `)
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
 
 
     if (error) {
 
       console.error(
-        "Members error:",
+        "Members Error:",
         error
       );
+
 
       if (membersMessage) {
 
@@ -396,8 +420,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    allMembers =
-      data || [];
+    allMembers = data || [];
 
 
     if (membersMessage) {
@@ -415,6 +438,46 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  /* =========================
+     OPEN MEMBERS MANAGEMENT
+  ========================= */
+
+  async function openMembersManagement() {
+
+    if (!membersSection) {
+
+      alert(
+        "Members Management section nahi mili."
+      );
+
+      return;
+    }
+
+
+    /*
+      Members section ko visible position
+      par le kar jayega.
+    */
+
+    membersSection.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+
+
+    /*
+      Members automatically load honge.
+    */
+
+    await loadMembers();
+
+  }
+
+
+  /* =========================
+     FILTER MEMBERS
+  ========================= */
+
   function filterMembers() {
 
     const search =
@@ -427,8 +490,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     const status =
-      memberStatus?.value ||
-      "";
+      memberStatus?.value || "";
 
 
     const result =
@@ -473,6 +535,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  /* =========================
+     CHANGE MEMBER STATUS
+  ========================= */
+
   async function changeMemberStatus(
     id,
     status
@@ -480,21 +546,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const {
       error
-    } =
-      await supabaseClient
-        .from("members")
-        .update({
+    } = await supabaseClient
+      .from("members")
+      .update({
 
-          status: status,
+        status: status,
 
-          updated_at:
-            new Date().toISOString()
+        updated_at:
+          new Date().toISOString()
 
-        })
-        .eq(
-          "id",
-          id
-        );
+      })
+      .eq(
+        "id",
+        id
+      );
 
 
     if (error) {
@@ -515,18 +580,26 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =========================
-     MEMBER EVENTS
-  ========================== */
+     LOAD MEMBERS BUTTON
+  ========================= */
 
   if (loadMembersBtn) {
 
     loadMembersBtn.addEventListener(
       "click",
-      loadMembers
+      async () => {
+
+        await loadMembers();
+
+      }
     );
 
   }
 
+
+  /* =========================
+     SEARCH
+  ========================= */
 
   if (memberSearch) {
 
@@ -538,6 +611,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
+  /* =========================
+     STATUS FILTER
+  ========================= */
+
   if (memberStatus) {
 
     memberStatus.addEventListener(
@@ -547,6 +624,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   }
 
+
+  /* =========================
+     MEMBER ACTIONS
+  ========================= */
 
   if (membersTableBody) {
 
@@ -638,8 +719,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =========================
-     DETAILS MODAL
-  ========================== */
+     UNIVERSAL DETAILS
+  ========================= */
 
   function openDetails(
     title,
@@ -658,9 +739,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
 
     modal.id =
@@ -718,9 +797,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   border-bottom:1px solid #ddd;
                 "
               >
-                ${escapeHTML(
-                  value
-                )}
+                ${escapeHTML(value)}
               </td>
 
             </tr>
@@ -760,7 +837,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           </h2>
 
           <button
-            type="button"
             id="ytaCloseModal"
           >
             Close
@@ -802,7 +878,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      GENERIC TABLE
-  ========================== */
+  ========================= */
 
   async function openTable(
     tableName,
@@ -813,10 +889,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     const {
       data,
       error
-    } =
-      await supabaseClient
-        .from(tableName)
-        .select("*");
+    } = await supabaseClient
+      .from(tableName)
+      .select("*");
 
 
     if (error) {
@@ -841,9 +916,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement(
-        "div"
-      );
+      document.createElement("div");
 
 
     modal.id =
@@ -978,7 +1051,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           </h2>
 
           <button
-            type="button"
             id="ytaCloseModal"
           >
             Close
@@ -1039,157 +1111,267 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =========================
-     NAVIGATION
-  ========================== */
+     CENTRAL
+  ========================= */
 
-  async function openSection(
-    section
-  ) {
+  async function openCentral() {
 
-    switch (section) {
+    await openTable(
+      "organization_settings",
+      "Central Organization",
+      [
 
-      case "central":
+        {
+          key:
+            "organization_name",
+          label:
+            "Organization Name"
+        },
 
-        await openTable(
-          "organization_settings",
-          "Central Organization",
-          [
-            {
-              key:
-                "organization_name",
-              label:
-                "Organization Name"
-            },
-            {
-              key:
-                "organization_short_name",
-              label:
-                "Short Name"
-            }
-          ]
-        );
+        {
+          key:
+            "organization_short_name",
+          label:
+            "Short Name"
+        }
 
-        break;
-
-
-      case "divisions":
-
-        await openTable(
-          "divisions",
-          "Divisions",
-          [
-            {
-              key:"name",
-              label:"Division Name"
-            },
-            {
-              key:"created_at",
-              label:"Created"
-            }
-          ]
-        );
-
-        break;
-
-
-      case "districts":
-
-        await openTable(
-          "districts",
-          "Districts",
-          [
-            {
-              key:"name",
-              label:"District Name"
-            },
-            {
-              key:"division_id",
-              label:"Division ID"
-            }
-          ]
-        );
-
-        break;
-
-
-      case "talukas":
-
-        await openTable(
-          "talukas",
-          "Talukas",
-          [
-            {
-              key:"name",
-              label:"Taluka Name"
-            },
-            {
-              key:"district_id",
-              label:"District ID"
-            }
-          ]
-        );
-
-        break;
-
-
-      case "members":
-
-        await loadMembers();
-
-        break;
-
-
-      case "office-bearers":
-
-        await openTable(
-          "dynamic_office_bearers",
-          "Office Bearers",
-          [
-            {
-              key:"name",
-              label:"Name"
-            },
-            {
-              key:"father_name",
-              label:"Father Name"
-            },
-            {
-              key:"designation",
-              label:"Designation"
-            },
-            {
-              key:"bps",
-              label:"BPS"
-            },
-            {
-              key:"mobile",
-              label:"Mobile"
-            },
-            {
-              key:"is_active",
-              label:"Active"
-            }
-          ]
-        );
-
-        break;
-
-
-      default:
-
-        console.warn(
-          "Unknown section:",
-          section
-        );
-
-    }
+      ]
+    );
 
   }
 
 
   /* =========================
-     NAVIGATION CLICK
-  ========================== */
+     DIVISIONS
+  ========================= */
+
+  async function openDivisions() {
+
+    await openTable(
+      "divisions",
+      "Divisions",
+      [
+
+        {
+          key:
+            "name",
+          label:
+            "Division Name"
+        },
+
+        {
+          key:
+            "created_at",
+          label:
+            "Created"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================
+     DISTRICTS
+  ========================= */
+
+  async function openDistricts() {
+
+    await openTable(
+      "districts",
+      "Districts",
+      [
+
+        {
+          key:
+            "name",
+          label:
+            "District Name"
+        },
+
+        {
+          key:
+            "division_id",
+          label:
+            "Division ID"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================
+     TALUKAS
+  ========================= */
+
+  async function openTalukas() {
+
+    await openTable(
+      "talukas",
+      "Talukas",
+      [
+
+        {
+          key:
+            "name",
+          label:
+            "Taluka Name"
+        },
+
+        {
+          key:
+            "district_id",
+          label:
+            "District ID"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================
+     DISTRICT ADMINS
+  ========================= */
+
+  async function openAdmins() {
+
+    await openTable(
+      "district_admins",
+      "District Admins",
+      [
+
+        {
+          key:
+            "user_id",
+          label:
+            "User ID"
+        },
+
+        {
+          key:
+            "district_id",
+          label:
+            "District ID"
+        },
+
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================
+     POSITIONS
+  ========================= */
+
+  async function openPositions() {
+
+    await openTable(
+      "dynamic_positions",
+      "Dynamic Positions",
+      [
+
+        {
+          key:
+            "position_name",
+          label:
+            "Position"
+        },
+
+        {
+          key:
+            "level",
+          label:
+            "Level"
+        },
+
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =========================
+     OFFICE BEARERS
+  ========================= */
+
+  async function openOfficeBearers() {
+
+    await openTable(
+      "dynamic_office_bearers",
+      "Dynamic Office Bearers",
+      [
+
+        {
+          key:
+            "name",
+          label:
+            "Name"
+        },
+
+        {
+          key:
+            "father_name",
+          label:
+            "Father Name"
+        },
+
+        {
+          key:
+            "designation",
+          label:
+            "Designation"
+        },
+
+        {
+          key:
+            "bps",
+          label:
+            "BPS"
+        },
+
+        {
+          key:
+            "mobile",
+          label:
+            "Mobile"
+        },
+
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     OPEN BUTTONS
+     ===================================================== */
 
   document.addEventListener(
     "click",
@@ -1197,7 +1379,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const button =
         event.target.closest(
-          "button[data-section]"
+          "button"
         );
 
 
@@ -1206,38 +1388,132 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
 
-      const section =
-        button.dataset.section;
+      /*
+        Sirf navigation ke Open buttons
+        ko handle karein.
+      */
+
+      if (
+        button.textContent
+          .trim()
+          .toLowerCase() !==
+        "open"
+      ) {
+
+        return;
+
+      }
 
 
-      if (!section) {
+      const card =
+        button.closest(
+          ".nav-card"
+        );
+
+
+      if (!card) {
         return;
       }
 
 
-      button.disabled = true;
+      const heading =
+        card.querySelector("h3");
 
 
-      try {
+      const title =
+        heading
+          ?.textContent
+          .trim()
+          .toLowerCase() || "";
 
-        await openSection(
-          section
-        );
 
-      } catch (error) {
+      /* =========================
+         MEMBERS
+      ========================= */
 
-        console.error(
-          "Navigation error:",
-          error
-        );
+      if (
+        title === "members"
+      ) {
 
-        alert(
-          error.message
-        );
+        await openMembersManagement();
 
-      } finally {
+        return;
 
-        button.disabled = false;
+      }
+
+
+      /* =========================
+         OFFICE BEARERS
+      ========================= */
+
+      if (
+        title ===
+        "office bearers"
+      ) {
+
+        await openOfficeBearers();
+
+        return;
+
+      }
+
+
+      /* =========================
+         CENTRAL
+      ========================= */
+
+      if (
+        title === "central"
+      ) {
+
+        await openCentral();
+
+        return;
+
+      }
+
+
+      /* =========================
+         DIVISIONS
+      ========================= */
+
+      if (
+        title === "divisions"
+      ) {
+
+        await openDivisions();
+
+        return;
+
+      }
+
+
+      /* =========================
+         DISTRICTS
+      ========================= */
+
+      if (
+        title === "districts"
+      ) {
+
+        await openDistricts();
+
+        return;
+
+      }
+
+
+      /* =========================
+         TALUKAS
+      ========================= */
+
+      if (
+        title === "talukas"
+      ) {
+
+        await openTalukas();
+
+        return;
 
       }
 
@@ -1247,7 +1523,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      LOGIN
-  ========================== */
+  ========================= */
 
   if (loginForm) {
 
@@ -1259,12 +1535,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
         const email =
-          $("email")?.value
+          $("email")
+            ?.value
             .trim();
 
 
         const password =
-          $("password")?.value;
+          $("password")
+            ?.value;
 
 
         if (
@@ -1278,6 +1556,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           return;
+
         }
 
 
@@ -1292,8 +1571,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         } =
           await supabaseClient.auth
             .signInWithPassword({
+
               email,
               password
+
             });
 
 
@@ -1305,6 +1586,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           return;
+
         }
 
 
@@ -1322,8 +1604,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               "central_owner"
           ) {
 
-            await supabaseClient
-              .auth
+            await supabaseClient.auth
               .signOut();
 
 
@@ -1333,6 +1614,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             return;
+
           }
 
 
@@ -1348,16 +1630,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           await loadStats();
 
+
         } catch (error) {
 
           console.error(
-            "Role verification:",
+            "Profile Error:",
             error
           );
 
 
-          await supabaseClient
-            .auth
+          await supabaseClient.auth
             .signOut();
 
 
@@ -1376,7 +1658,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      LOGOUT
-  ========================== */
+  ========================= */
 
   if (logoutBtn) {
 
@@ -1384,8 +1666,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       "click",
       async () => {
 
-        await supabaseClient
-          .auth
+        await supabaseClient.auth
           .signOut();
 
 
@@ -1399,7 +1680,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* =========================
      EXISTING SESSION
-  ========================== */
+  ========================= */
 
   try {
 
@@ -1407,8 +1688,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       data,
       error
     } =
-      await supabaseClient
-        .auth
+      await supabaseClient.auth
         .getSession();
 
 
@@ -1417,9 +1697,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    if (
-      data?.session
-    ) {
+    if (data?.session) {
 
       const profile =
         await getUserProfile(
@@ -1442,8 +1720,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       } else {
 
-        await supabaseClient
-          .auth
+        await supabaseClient.auth
           .signOut();
 
 
@@ -1457,12 +1734,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+
   } catch (error) {
 
     console.error(
-      "Session error:",
+      "Session Error:",
       error
     );
+
 
     showLogin();
 
