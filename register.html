@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>YTA Sindh Membership Registration</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="topbar">
+    <div>
+      <h1>YTA Sindh</h1>
+      <p>Young Teachers Alliance — Sindh</p>
+    </div>
+  </header>
+
+
+  <main class="container">
+
+    <section class="welcome">
+      <h2>Membership Registration</h2>
+
+      <p>
+        Register as a member of Young Teachers Alliance Sindh.
+      </p>
+    </section>
+
+
+    <section class="login-card">
+
+      <form id="registrationForm">
+
+        <label>Full Name</label>
+
+        <input
+          type="text"
+          id="full_name"
+          required
+        >
+
+
+        <label>Father Name</label>
+
+        <input
+          type="text"
+          id="father_name"
+        >
+
+
+        <label>CNIC</label>
+
+        <input
+          type="text"
+          id="cnic"
+          placeholder="XXXXX-XXXXXXX-X"
+          required
+        >
+
+
+        <label>Mobile</label>
+
+        <input
+          type="text"
+          id="mobile"
+          placeholder="03XXXXXXXXX"
+          required
+        >
+
+
+        <label>Division</label>
+
+        <select id="division_id" required>
+
+          <option value="">
+            Select Division
+          </option>
+
+        </select>
+
+
+        <label>District</label>
+
+        <select id="district_id" required>
+
+          <option value="">
+            Select District
+          </option>
+
+        </select>
+
+
+        <label>Taluka</label>
+
+        <select id="taluka_id" required>
+
+          <option value="">
+            Select Taluka
+          </option>
+
+        </select>
+
+
+        <label>School Name</label>
+
+        <input
+          type="text"
+          id="school_name"
+          required
+        >
+
+
+        <label>SEMIS Code</label>
+
+        <input
+          type="text"
+          id="semis_code"
+        >
+
+
+        <label>Designation</label>
+
+        <input
+          type="text"
+          id="designation"
+          value="Teacher"
+        >
+
+
+        <label>BPS</label>
+
+        <input
+          type="text"
+          id="bps"
+        >
+
+
+        <label>Joining Date</label>
+
+        <input
+          type="date"
+          id="joining_date"
+        >
+
+
+        <label>Address</label>
+
+        <textarea
+          id="address"
+          rows="4"
+        ></textarea>
+
+
+        <button
+          type="submit"
+        >
+          Submit Membership
+        </button>
+
+
+        <p
+          id="registrationMessage"
+        ></p>
+
+      </form>
+
+    </section>
+
+  </main>
+
+
+  <script src="config.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="register.js"></script>
+
+</body>
+</html>
