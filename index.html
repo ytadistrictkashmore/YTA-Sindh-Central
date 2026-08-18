@@ -1,6 +1,6 @@
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,14 +19,21 @@
     </div>
   </header>
 
+
   <main class="container">
 
     <section class="welcome">
       <h2>Central Secretariat</h2>
+
       <p>
         Welcome to the YTA Sindh Central Secretariat Management System.
       </p>
     </section>
+
+
+    <!-- =========================
+         LOGIN
+    ========================== -->
 
     <section class="login-card">
 
@@ -34,7 +41,10 @@
 
       <form id="loginForm">
 
-        <label for="email">Email</label>
+        <label for="email">
+          Email
+        </label>
+
         <input
           type="email"
           id="email"
@@ -42,7 +52,11 @@
           required
         >
 
-        <label for="password">Password</label>
+
+        <label for="password">
+          Password
+        </label>
+
         <input
           type="password"
           id="password"
@@ -50,158 +64,409 @@
           required
         >
 
+
         <button type="submit">
           Login
         </button>
 
       </form>
 
+
       <p id="loginMessage"></p>
 
     </section>
 
-    <section id="dashboard" class="dashboard hidden">
-      
-<div class="members-section">
 
-  <div class="section-header">
-    <div>
-      <h2>Members Management</h2>
-      <p>YTA Sindh Central Secretariat</p>
-    </div>
+    <!-- =========================
+         DASHBOARD
+    ========================== -->
 
-    <button id="loadMembersBtn">
-      Load Members
-    </button>
-  </div>
-
-  <div class="member-tools">
-
-    <input
-      type="text"
-      id="memberSearch"
-      placeholder="Search Name, Registration, CNIC, Mobile..."
+    <section
+      id="dashboard"
+      class="dashboard hidden"
     >
 
-    <select id="memberStatus">
-      <option value="">All Status</option>
-      <option value="Under Review">Under Review</option>
-      <option value="Approved">Approved</option>
-      <option value="Rejected">Rejected</option>
-    </select>
 
-  </div>
+      <!-- =========================
+           DASHBOARD HEADER
+      ========================== -->
 
-  <div id="membersMessage"></div>
-
-  <div class="members-table-wrapper">
-
-    <table class="members-table">
-
-      <thead>
-        <tr>
-          <th>Registration</th>
-          <th>Name</th>
-          <th>Father Name</th>
-          <th>CNIC</th>
-          <th>Mobile</th>
-          <th>District</th>
-          <th>Taluka</th>
-          <th>School</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-
-      <tbody id="membersTableBody"></tbody>
-
-    </table>
-
-  </div>
-
-</div>
       <div class="dashboard-header">
+
         <div>
-          <h2>Central Owner Dashboard</h2>
+
+          <h2>
+            Central Owner Dashboard
+          </h2>
+
           <p id="userEmail"></p>
+
         </div>
+
 
         <button id="logoutBtn">
           Logout
         </button>
+
       </div>
+
+
+      <!-- =========================
+           STATISTICS
+      ========================== -->
 
       <div class="stats">
 
-        <div class="stat-card">
-          <h3>Total Members</h3>
-          <strong id="totalMembers">0</strong>
-        </div>
 
         <div class="stat-card">
-          <h3>Under Review</h3>
-          <strong id="pendingMembers">0</strong>
+
+          <h3>
+            Total Members
+          </h3>
+
+          <strong id="totalMembers">
+            0
+          </strong>
+
         </div>
 
-        <div class="stat-card">
-          <h3>Approved</h3>
-          <strong id="approvedMembers">0</strong>
-        </div>
 
         <div class="stat-card">
-          <h3>Rejected</h3>
-          <strong id="rejectedMembers">0</strong>
+
+          <h3>
+            Under Review
+          </h3>
+
+          <strong id="pendingMembers">
+            0
+          </strong>
+
         </div>
+
+
+        <div class="stat-card">
+
+          <h3>
+            Approved
+          </h3>
+
+          <strong id="approvedMembers">
+            0
+          </strong>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <h3>
+            Rejected
+          </h3>
+
+          <strong id="rejectedMembers">
+            0
+          </strong>
+
+        </div>
+
 
       </div>
+
+
+      <!-- =========================
+           NAVIGATION
+      ========================== -->
 
       <div class="navigation">
 
-        <div class="nav-card">
-          <h3>Central</h3>
-          <p>Central Secretariat</p>
-          <button>Open</button>
-        </div>
+
+        <!-- CENTRAL -->
 
         <div class="nav-card">
-          <h3>Divisions</h3>
-          <p>View all Sindh divisions</p>
-          <button>Open</button>
+
+          <h3>
+            Central
+          </h3>
+
+          <p>
+            Central Secretariat
+          </p>
+
+          <button
+            type="button"
+            data-section="central"
+          >
+            Open
+          </button>
+
         </div>
 
-        <div class="nav-card">
-          <h3>Districts</h3>
-          <p>View districts by division</p>
-          <button>Open</button>
-        </div>
+
+        <!-- DIVISIONS -->
 
         <div class="nav-card">
-          <h3>Talukas</h3>
-          <p>View talukas by district</p>
-          <button>Open</button>
+
+          <h3>
+            Divisions
+          </h3>
+
+          <p>
+            View all Sindh divisions
+          </p>
+
+          <button
+            type="button"
+            data-section="divisions"
+          >
+            Open
+          </button>
+
         </div>
 
-        <div class="nav-card">
-          <h3>Members</h3>
-          <p>Manage membership applications</p>
-          <button>Open</button>
-        </div>
+
+        <!-- DISTRICTS -->
 
         <div class="nav-card">
-          <h3>Office Bearers</h3>
-          <p>Manage dynamic positions</p>
-          <button>Open</button>
+
+          <h3>
+            Districts
+          </h3>
+
+          <p>
+            View districts by division
+          </p>
+
+          <button
+            type="button"
+            data-section="districts"
+          >
+            Open
+          </button>
+
         </div>
+
+
+        <!-- TALUKAS -->
+
+        <div class="nav-card">
+
+          <h3>
+            Talukas
+          </h3>
+
+          <p>
+            View talukas by district
+          </p>
+
+          <button
+            type="button"
+            data-section="talukas"
+          >
+            Open
+          </button>
+
+        </div>
+
+
+        <!-- MEMBERS -->
+
+        <div class="nav-card">
+
+          <h3>
+            Members
+          </h3>
+
+          <p>
+            Manage membership applications
+          </p>
+
+          <button
+            type="button"
+            data-section="members"
+          >
+            Open
+          </button>
+
+        </div>
+
+
+        <!-- OFFICE BEARERS -->
+
+        <div class="nav-card">
+
+          <h3>
+            Office Bearers
+          </h3>
+
+          <p>
+            Manage dynamic positions
+          </p>
+
+          <button
+            type="button"
+            data-section="office-bearers"
+          >
+            Open
+          </button>
+
+        </div>
+
 
       </div>
+
+
+      <!-- =========================
+           MEMBERS MANAGEMENT
+      ========================== -->
+
+      <div class="members-section">
+
+
+        <div class="section-header">
+
+          <div>
+
+            <h2>
+              Members Management
+            </h2>
+
+            <p>
+              YTA Sindh Central Secretariat
+            </p>
+
+          </div>
+
+
+          <button
+            id="loadMembersBtn"
+            type="button"
+          >
+            Load Members
+          </button>
+
+        </div>
+
+
+        <div class="member-tools">
+
+
+          <input
+            type="text"
+            id="memberSearch"
+            placeholder="Search Name, Registration, CNIC, Mobile..."
+          >
+
+
+          <select id="memberStatus">
+
+            <option value="">
+              All Status
+            </option>
+
+            <option value="Under Review">
+              Under Review
+            </option>
+
+            <option value="Approved">
+              Approved
+            </option>
+
+            <option value="Rejected">
+              Rejected
+            </option>
+
+          </select>
+
+
+        </div>
+
+
+        <div id="membersMessage"></div>
+
+
+        <div class="members-table-wrapper">
+
+          <table class="members-table">
+
+
+            <thead>
+
+              <tr>
+
+                <th>
+                  Registration
+                </th>
+
+                <th>
+                  Name
+                </th>
+
+                <th>
+                  Father Name
+                </th>
+
+                <th>
+                  CNIC
+                </th>
+
+                <th>
+                  Mobile
+                </th>
+
+                <th>
+                  District
+                </th>
+
+                <th>
+                  Taluka
+                </th>
+
+                <th>
+                  School
+                </th>
+
+                <th>
+                  Status
+                </th>
+
+                <th>
+                  Action
+                </th>
+
+              </tr>
+
+            </thead>
+
+
+            <tbody
+              id="membersTableBody"
+            ></tbody>
+
+
+          </table>
+
+        </div>
+
+
+      </div>
+
 
     </section>
 
   </main>
 
-<script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+
+  <!-- =========================
+       SCRIPTS
+  ========================== -->
+
+  <script src="config.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <script src="app.js"></script>
+
 
 </body>
+
 </html>
