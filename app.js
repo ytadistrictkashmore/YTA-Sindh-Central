@@ -72,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =========================
-     LOGIN / DASHBOARD
+     SHOW DASHBOARD
   ========================= */
 
   function showDashboard(email) {
@@ -90,6 +90,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+
+  /* =========================
+     SHOW LOGIN
+  ========================= */
 
   function showLogin() {
 
@@ -187,18 +191,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           total.count ?? 0;
       }
 
-
       if (pendingMembers) {
         pendingMembers.textContent =
           pending.count ?? 0;
       }
 
-
       if (approvedMembers) {
         approvedMembers.textContent =
           approved.count ?? 0;
       }
-
 
       if (rejectedMembers) {
         rejectedMembers.textContent =
@@ -217,9 +218,116 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
+     LOAD LOCATION DATA
+     ===================================================== */
+
+  async function loadLocationMaps() {
+
+    const divisionResult =
+      await supabaseClient
+        .from("divisions")
+        .select("id,name");
+
+
+    const districtResult =
+      await supabaseClient
+        .from("districts")
+        .select("id,name,division_id");
+
+
+    const talukaResult =
+      await supabaseClient
+        .from("talukas")
+        .select("id,name,district_id");
+
+
+    if (divisionResult.error) {
+      console.error(
+        "Division Error:",
+        divisionResult.error
+      );
+    }
+
+
+    if (districtResult.error) {
+      console.error(
+        "District Error:",
+        districtResult.error
+      );
+    }
+
+
+    if (talukaResult.error) {
+      console.error(
+        "Taluka Error:",
+        talukaResult.error
+      );
+    }
+
+
+    const divisionMap = {};
+    const districtMap = {};
+    const talukaMap = {};
+
+
+    /* =========================
+       DIVISION MAP
+    ========================= */
+
+    (divisionResult.data || []).forEach(
+      division => {
+
+        divisionMap[division.id] =
+          division.name;
+
+      }
+    );
+
+
+    /* =========================
+       DISTRICT MAP
+    ========================= */
+
+    (districtResult.data || []).forEach(
+      district => {
+
+        districtMap[district.id] = {
+          name: district.name,
+          division_id: district.division_id
+        };
+
+      }
+    );
+
+
+    /* =========================
+       TALUKA MAP
+    ========================= */
+
+    (talukaResult.data || []).forEach(
+      taluka => {
+
+        talukaMap[taluka.id] = {
+          name: taluka.name,
+          district_id: taluka.district_id
+        };
+
+      }
+    );
+
+
+    return {
+      divisionMap,
+      districtMap,
+      talukaMap
+    };
+  }
+
+
+  /* =====================================================
      MEMBERS TABLE
-  ========================= */
+     ===================================================== */
 
   function renderMembers(members) {
 
@@ -265,11 +373,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           )}
         </td>
 
+
         <td>
           ${escapeHTML(
             member.full_name
           )}
         </td>
+
 
         <td>
           ${escapeHTML(
@@ -277,11 +387,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           )}
         </td>
 
+
         <td>
           ${escapeHTML(
             member.cnic
           )}
         </td>
+
 
         <td>
           ${escapeHTML(
@@ -289,17 +401,20 @@ document.addEventListener("DOMContentLoaded", async () => {
           )}
         </td>
 
-        <td>
-          ${escapeHTML(
-            member.district_id
-          )}
-        </td>
 
         <td>
           ${escapeHTML(
-            member.taluka_id
+            member.district_name
           )}
         </td>
+
+
+        <td>
+          ${escapeHTML(
+            member.taluka_name
+          )}
+        </td>
+
 
         <td>
           ${escapeHTML(
@@ -307,11 +422,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           )}
         </td>
 
+
         <td>
           ${escapeHTML(
             member.status
           )}
         </td>
+
 
         <td>
 
@@ -322,12 +439,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             View
           </button>
 
+
           <button
             class="approve-btn"
             data-member-approve="${member.id}"
           >
             Approve
           </button>
+
 
           <button
             class="reject-btn"
@@ -337,6 +456,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           </button>
 
         </td>
+
       `;
 
 
@@ -347,9 +467,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      LOAD MEMBERS
-  ========================= */
+     ===================================================== */
 
   async function loadMembers() {
 
@@ -365,6 +485,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+
+    /* =========================
+       GET MEMBERS
+    ========================= */
 
     const {
       data,
@@ -420,7 +544,136 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    allMembers = data || [];
+    /* =========================
+       GET LOCATION MAPS
+    ========================= */
+
+    const {
+      divisionMap,
+      districtMap,
+      talukaMap
+    } = await loadLocationMaps();
+
+
+    /* =========================
+       ADD LOCATION NAMES
+    ========================= */
+
+    allMembers =
+      (data || []).map(member => {
+
+        const district =
+          districtMap[
+            member.district_id
+          ];
+
+
+        const taluka =
+          talukaMap[
+            member.taluka_id
+          ];
+
+
+        let divisionName = "";
+
+
+        /* =========================
+           FIND DIVISION
+        ========================= */
+
+        if (
+          member.division_id &&
+          divisionMap[
+            member.division_id
+          ]
+        ) {
+
+          divisionName =
+            divisionMap[
+              member.division_id
+            ];
+
+        }
+
+
+        /*
+          Agar member ke division_id
+          mein value nahi hai to district
+          ke division_id se naam nikalein.
+        */
+
+        if (
+          !divisionName &&
+          district &&
+          district.division_id
+        ) {
+
+          divisionName =
+            divisionMap[
+              district.division_id
+            ] || "";
+
+        }
+
+
+        /*
+          Agar division_id nahi hai
+          aur taluka available hai to
+          taluka -> district -> division
+          se naam nikalein.
+        */
+
+        if (
+          !divisionName &&
+          taluka &&
+          taluka.district_id
+        ) {
+
+          const talukaDistrict =
+            districtMap[
+              taluka.district_id
+            ];
+
+
+          if (
+            talukaDistrict &&
+            talukaDistrict.division_id
+          ) {
+
+            divisionName =
+              divisionMap[
+                talukaDistrict.division_id
+              ] || "";
+
+          }
+
+        }
+
+
+        return {
+
+          ...member,
+
+          division_name:
+            divisionName ||
+            member.division_id ||
+            "",
+
+
+          district_name:
+            district?.name ||
+            member.district_id ||
+            "",
+
+
+          taluka_name:
+            taluka?.name ||
+            member.taluka_id ||
+            ""
+
+        };
+
+      });
 
 
     if (membersMessage) {
@@ -438,9 +691,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      OPEN MEMBERS MANAGEMENT
-  ========================= */
+     ===================================================== */
 
   async function openMembersManagement() {
 
@@ -454,29 +707,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
 
-    /*
-      Members section ko visible position
-      par le kar jayega.
-    */
-
     membersSection.scrollIntoView({
       behavior: "smooth",
       block: "start"
     });
 
 
-    /*
-      Members automatically load honge.
-    */
-
     await loadMembers();
 
   }
 
 
-  /* =========================
+  /* =====================================================
      FILTER MEMBERS
-  ========================= */
+     ===================================================== */
 
   function filterMembers() {
 
@@ -504,6 +748,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             member.father_name,
             member.cnic,
             member.mobile,
+            member.division_name,
+            member.district_name,
+            member.taluka_name,
             member.school_name,
             member.semis_code,
             member.designation
@@ -535,9 +782,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      CHANGE MEMBER STATUS
-  ========================= */
+     ===================================================== */
 
   async function changeMemberStatus(
     id,
@@ -579,9 +826,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      LOAD MEMBERS BUTTON
-  ========================= */
+     ===================================================== */
 
   if (loadMembersBtn) {
 
@@ -597,9 +844,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      SEARCH
-  ========================= */
+     ===================================================== */
 
   if (memberSearch) {
 
@@ -611,9 +858,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      STATUS FILTER
-  ========================= */
+     ===================================================== */
 
   if (memberStatus) {
 
@@ -625,9 +872,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      MEMBER ACTIONS
-  ========================= */
+     ===================================================== */
 
   if (membersTableBody) {
 
@@ -653,6 +900,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
 
+        /* =========================
+           APPROVE
+        ========================= */
+
         if (approve) {
 
           if (
@@ -672,6 +923,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
 
+        /* =========================
+           REJECT
+        ========================= */
+
         if (reject) {
 
           if (
@@ -690,6 +945,10 @@ document.addEventListener("DOMContentLoaded", async () => {
           return;
         }
 
+
+        /* =========================
+           VIEW
+        ========================= */
 
         if (view) {
 
@@ -718,9 +977,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
-     UNIVERSAL DETAILS
-  ========================= */
+  /* =====================================================
+     MEMBER DETAILS
+     ===================================================== */
 
   function openDetails(
     title,
@@ -761,8 +1020,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     let rows = "";
 
 
+    const displayData = {
+
+      "Registration No":
+        data.registration_no,
+
+      "Full Name":
+        data.full_name,
+
+      "Father Name":
+        data.father_name,
+
+      "CNIC":
+        data.cnic,
+
+      "Mobile":
+        data.mobile,
+
+      "Division":
+        data.division_name,
+
+      "District":
+        data.district_name,
+
+      "Taluka":
+        data.taluka_name,
+
+      "School":
+        data.school_name,
+
+      "SEMIS Code":
+        data.semis_code,
+
+      "Designation":
+        data.designation,
+
+      "BPS":
+        data.bps,
+
+      "Joining Date":
+        data.joining_date,
+
+      "Address":
+        data.address,
+
+      "Status":
+        data.status,
+
+      "Created":
+        data.created_at
+
+    };
+
+
     Object.entries(
-      data || {}
+      displayData
     ).forEach(
       ([key, value]) => {
 
@@ -783,12 +1095,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                   border-bottom:1px solid #ddd;
                 "
               >
-                ${escapeHTML(
-                  key.replaceAll(
-                    "_",
-                    " "
-                  )
-                )}
+                ${escapeHTML(key)}
               </th>
 
               <td
@@ -876,9 +1183,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      GENERIC TABLE
-  ========================= */
+     ===================================================== */
 
   async function openTable(
     tableName,
@@ -1050,9 +1357,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             ${escapeHTML(title)}
           </h2>
 
-          <button
-            id="ytaCloseModal"
-          >
+          <button id="ytaCloseModal">
             Close
           </button>
 
@@ -1080,7 +1385,6 @@ document.addEventListener("DOMContentLoaded", async () => {
               </tr>
 
             </thead>
-
 
             <tbody>
               ${body}
@@ -1110,9 +1414,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      CENTRAL
-  ========================= */
+     ===================================================== */
 
   async function openCentral() {
 
@@ -1120,249 +1424,18 @@ document.addEventListener("DOMContentLoaded", async () => {
       "organization_settings",
       "Central Organization",
       [
-
         {
           key:
             "organization_name",
           label:
             "Organization Name"
         },
-
         {
           key:
             "organization_short_name",
           label:
             "Short Name"
         }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     DIVISIONS
-  ========================= */
-
-  async function openDivisions() {
-
-    await openTable(
-      "divisions",
-      "Divisions",
-      [
-
-        {
-          key:
-            "name",
-          label:
-            "Division Name"
-        },
-
-        {
-          key:
-            "created_at",
-          label:
-            "Created"
-        }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     DISTRICTS
-  ========================= */
-
-  async function openDistricts() {
-
-    await openTable(
-      "districts",
-      "Districts",
-      [
-
-        {
-          key:
-            "name",
-          label:
-            "District Name"
-        },
-
-        {
-          key:
-            "division_id",
-          label:
-            "Division ID"
-        }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     TALUKAS
-  ========================= */
-
-  async function openTalukas() {
-
-    await openTable(
-      "talukas",
-      "Talukas",
-      [
-
-        {
-          key:
-            "name",
-          label:
-            "Taluka Name"
-        },
-
-        {
-          key:
-            "district_id",
-          label:
-            "District ID"
-        }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     DISTRICT ADMINS
-  ========================= */
-
-  async function openAdmins() {
-
-    await openTable(
-      "district_admins",
-      "District Admins",
-      [
-
-        {
-          key:
-            "user_id",
-          label:
-            "User ID"
-        },
-
-        {
-          key:
-            "district_id",
-          label:
-            "District ID"
-        },
-
-        {
-          key:
-            "is_active",
-          label:
-            "Active"
-        }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     POSITIONS
-  ========================= */
-
-  async function openPositions() {
-
-    await openTable(
-      "dynamic_positions",
-      "Dynamic Positions",
-      [
-
-        {
-          key:
-            "position_name",
-          label:
-            "Position"
-        },
-
-        {
-          key:
-            "level",
-          label:
-            "Level"
-        },
-
-        {
-          key:
-            "is_active",
-          label:
-            "Active"
-        }
-
-      ]
-    );
-
-  }
-
-
-  /* =========================
-     OFFICE BEARERS
-  ========================= */
-
-  async function openOfficeBearers() {
-
-    await openTable(
-      "dynamic_office_bearers",
-      "Dynamic Office Bearers",
-      [
-
-        {
-          key:
-            "name",
-          label:
-            "Name"
-        },
-
-        {
-          key:
-            "father_name",
-          label:
-            "Father Name"
-        },
-
-        {
-          key:
-            "designation",
-          label:
-            "Designation"
-        },
-
-        {
-          key:
-            "bps",
-          label:
-            "BPS"
-        },
-
-        {
-          key:
-            "mobile",
-          label:
-            "Mobile"
-        },
-
-        {
-          key:
-            "is_active",
-          label:
-            "Active"
-        }
-
       ]
     );
 
@@ -1370,7 +1443,211 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   /* =====================================================
-     OPEN BUTTONS
+     DIVISIONS
+     ===================================================== */
+
+  async function openDivisions() {
+
+    await openTable(
+      "divisions",
+      "Divisions",
+      [
+        {
+          key:
+            "name",
+          label:
+            "Division Name"
+        },
+        {
+          key:
+            "created_at",
+          label:
+            "Created"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     DISTRICTS
+     ===================================================== */
+
+  async function openDistricts() {
+
+    await openTable(
+      "districts",
+      "Districts",
+      [
+        {
+          key:
+            "name",
+          label:
+            "District Name"
+        },
+        {
+          key:
+            "division_id",
+          label:
+            "Division ID"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     TALUKAS
+     ===================================================== */
+
+  async function openTalukas() {
+
+    await openTable(
+      "talukas",
+      "Talukas",
+      [
+        {
+          key:
+            "name",
+          label:
+            "Taluka Name"
+        },
+        {
+          key:
+            "district_id",
+          label:
+            "District ID"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     DISTRICT ADMINS
+     ===================================================== */
+
+  async function openAdmins() {
+
+    await openTable(
+      "district_admins",
+      "District Admins",
+      [
+        {
+          key:
+            "user_id",
+          label:
+            "User ID"
+        },
+        {
+          key:
+            "district_id",
+          label:
+            "District ID"
+        },
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     POSITIONS
+     ===================================================== */
+
+  async function openPositions() {
+
+    await openTable(
+      "dynamic_positions",
+      "Dynamic Positions",
+      [
+        {
+          key:
+            "position_name",
+          label:
+            "Position"
+        },
+        {
+          key:
+            "level",
+          label:
+            "Level"
+        },
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     OFFICE BEARERS
+     ===================================================== */
+
+  async function openOfficeBearers() {
+
+    await openTable(
+      "dynamic_office_bearers",
+      "Dynamic Office Bearers",
+      [
+        {
+          key:
+            "name",
+          label:
+            "Name"
+        },
+        {
+          key:
+            "father_name",
+          label:
+            "Father Name"
+        },
+        {
+          key:
+            "designation",
+          label:
+            "Designation"
+        },
+        {
+          key:
+            "bps",
+          label:
+            "BPS"
+        },
+        {
+          key:
+            "mobile",
+          label:
+            "Mobile"
+        },
+        {
+          key:
+            "is_active",
+          label:
+            "Active"
+        }
+      ]
+    );
+
+  }
+
+
+  /* =====================================================
+     NAVIGATION OPEN BUTTONS
      ===================================================== */
 
   document.addEventListener(
@@ -1388,11 +1665,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
 
-      /*
-        Sirf navigation ke Open buttons
-        ko handle karein.
-      */
-
       if (
         button.textContent
           .trim()
@@ -1401,7 +1673,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       ) {
 
         return;
-
       }
 
 
@@ -1427,10 +1698,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           .toLowerCase() || "";
 
 
-      /* =========================
-         MEMBERS
-      ========================= */
-
       if (
         title === "members"
       ) {
@@ -1438,29 +1705,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         await openMembersManagement();
 
         return;
-
       }
 
 
-      /* =========================
-         OFFICE BEARERS
-      ========================= */
-
       if (
-        title ===
-        "office bearers"
+        title === "office bearers"
       ) {
 
         await openOfficeBearers();
 
         return;
-
       }
 
-
-      /* =========================
-         CENTRAL
-      ========================= */
 
       if (
         title === "central"
@@ -1469,13 +1725,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await openCentral();
 
         return;
-
       }
 
-
-      /* =========================
-         DIVISIONS
-      ========================= */
 
       if (
         title === "divisions"
@@ -1484,13 +1735,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await openDivisions();
 
         return;
-
       }
 
-
-      /* =========================
-         DISTRICTS
-      ========================= */
 
       if (
         title === "districts"
@@ -1499,13 +1745,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         await openDistricts();
 
         return;
-
       }
 
-
-      /* =========================
-         TALUKAS
-      ========================= */
 
       if (
         title === "talukas"
@@ -1514,16 +1755,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         await openTalukas();
 
         return;
-
       }
 
     }
   );
 
 
-  /* =========================
+  /* =====================================================
      LOGIN
-  ========================= */
+     ===================================================== */
 
   if (loginForm) {
 
@@ -1556,7 +1796,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           return;
-
         }
 
 
@@ -1586,7 +1825,6 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
           return;
-
         }
 
 
@@ -1614,7 +1852,6 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             return;
-
           }
 
 
@@ -1629,7 +1866,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
           await loadStats();
-
 
         } catch (error) {
 
@@ -1656,9 +1892,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      LOGOUT
-  ========================= */
+     ===================================================== */
 
   if (logoutBtn) {
 
@@ -1678,9 +1914,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      EXISTING SESSION
-  ========================= */
+     ===================================================== */
 
   try {
 
