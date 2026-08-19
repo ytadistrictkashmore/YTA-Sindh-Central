@@ -5,28 +5,37 @@ document.addEventListener("DOMContentLoaded", async () => {
     window.YTA_CONFIG.supabaseAnonKey
   );
 
-  const $ = (id) => document.getElementById(id);
+  const divisionSelect = document.getElementById("division_id");
+  const districtSelect = document.getElementById("district_id");
+  const talukaSelect = document.getElementById("taluka_id");
+  const form = document.getElementById("registrationForm");
+  const message = document.getElementById("registrationMessage");
 
-  const form = $("registrationForm");
-  const message = $("registrationMessage");
-
-  const divisionSelect = $("division_id");
-  const districtSelect = $("district_id");
-  const talukaSelect = $("taluka_id");
-
-
-  /* =========================
-     MESSAGE
-  ========================= */
 
   function showMessage(text, error = false) {
 
     if (!message) return;
 
     message.textContent = text;
+    message.style.color = error
+      ? "#b91c1c"
+      : "#15803d";
+  }
 
-    message.style.color =
-      error ? "#b91c1c" : "#15803d";
+
+  function setLoading(select, text) {
+
+    if (!select) return;
+
+    select.innerHTML = "";
+
+    const option =
+      document.createElement("option");
+
+    option.value = "";
+    option.textContent = text;
+
+    select.appendChild(option);
   }
 
 
@@ -36,26 +45,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function loadDivisions() {
 
-    if (!divisionSelect) return;
+    setLoading(
+      divisionSelect,
+      "Loading Divisions..."
+    );
 
-    const { data, error } =
+    const result =
       await supabaseClient
         .from("divisions")
-        .select("id, name")
+        .select("id,name")
         .order("name");
 
-    if (error) {
+    console.log(
+      "DIVISIONS RESULT:",
+      result
+    );
 
-      console.error(error);
+    if (result.error) {
+
+      setLoading(
+        divisionSelect,
+        "Unable to load Divisions"
+      );
 
       showMessage(
-        "Divisions load nahi ho sakin: " +
-        error.message,
+        "Division Error: " +
+        result.error.message,
         true
       );
 
-      return;
+      return false;
     }
+
 
     divisionSelect.innerHTML = `
       <option value="">
@@ -63,18 +84,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       </option>
     `;
 
-    (data || []).forEach(division => {
 
-      const option =
-        document.createElement("option");
+    (result.data || []).forEach(
+      division => {
 
-      option.value = division.id;
-      option.textContent = division.name;
+        const option =
+          document.createElement("option");
 
-      divisionSelect.appendChild(option);
+        option.value = division.id;
+        option.textContent = division.name;
 
-    });
+        divisionSelect.appendChild(
+          option
+        );
 
+      }
+    );
+
+
+    return true;
   }
 
 
@@ -82,7 +110,65 @@ document.addEventListener("DOMContentLoaded", async () => {
      LOAD DISTRICTS
   ========================= */
 
-  async function loadDistricts(divisionId) {
+  async function loadDistricts(
+    divisionId
+  ) {
+
+    setLoading(
+      districtSelect,
+      "Loading Districts..."
+    );
+
+    setLoading(
+      talukaSelect,
+      "Select Taluka"
+    );
+
+
+    if (!divisionId) {
+
+      setLoading(
+        districtSelect,
+        "Select District"
+      );
+
+      return;
+    }
+
+
+    const result =
+      await supabaseClient
+        .from("districts")
+        .select("id,name,division_id")
+        .eq(
+          "division_id",
+          divisionId
+        )
+        .order("name");
+
+
+    console.log(
+      "DISTRICTS RESULT:",
+      result
+    );
+
+
+    if (result.error) {
+
+      setLoading(
+        districtSelect,
+        "Unable to load Districts"
+      );
+
+      showMessage(
+        "District Error: " +
+        result.error.message,
+        true
+      );
+
+      return;
+    }
+
 
     districtSelect.innerHTML = `
       <option value="">
@@ -90,45 +176,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       </option>
     `;
 
-    talukaSelect.innerHTML = `
-      <option value="">
-        Select Taluka
-      </option>
-    `;
 
-    if (!divisionId) return;
+    (result.data || []).forEach(
+      district => {
 
-    const { data, error } =
-      await supabaseClient
-        .from("districts")
-        .select("id, name")
-        .eq("division_id", divisionId)
-        .order("name");
+        const option =
+          document.createElement("option");
 
-    if (error) {
+        option.value =
+          district.id;
 
-      console.error(error);
+        option.textContent =
+          district.name;
 
-      showMessage(
-        "Districts load nahi ho sake: " +
-        error.message,
-        true
-      );
+        districtSelect.appendChild(
+          option
+        );
 
-      return;
-    }
-
-    (data || []).forEach(district => {
-
-      const option =
-        document.createElement("option");
-
-      option.value = district.id;
-      option.textContent = district.name;
-
-      districtSelect.appendChild(option);
-
-    });
+      }
+    );
 
   }
 
@@ -137,7 +203,60 @@ document.addEventListener("DOMContentLoaded", async () => {
      LOAD TALUKAS
   ========================= */
 
-  async function loadTalukas(districtId) {
+  async function loadTalukas(
+    districtId
+  ) {
+
+    setLoading(
+      talukaSelect,
+      "Loading Talukas..."
+    );
+
+
+    if (!districtId) {
+
+      setLoading(
+        talukaSelect,
+        "Select Taluka"
+      );
+
+      return;
+    }
+
+
+    const result =
+      await supabaseClient
+        .from("talukas")
+        .select("id,name,district_id")
+        .eq(
+          "district_id",
+          districtId
+        )
+        .order("name");
+
+
+    console.log(
+      "TALUKAS RESULT:",
+      result
+    );
+
+
+    if (result.error) {
+
+      setLoading(
+        talukaSelect,
+        "Unable to load Talukas"
+      );
+
+      showMessage(
+        "Taluka Error: " +
+        result.error.message,
+        true
+      );
+
+      return;
+    }
+
 
     talukaSelect.innerHTML = `
       <option value="">
@@ -145,94 +264,72 @@ document.addEventListener("DOMContentLoaded", async () => {
       </option>
     `;
 
-    if (!districtId) return;
 
-    const { data, error } =
-      await supabaseClient
-        .from("talukas")
-        .select("id, name")
-        .eq("district_id", districtId)
-        .order("name");
+    (result.data || []).forEach(
+      taluka => {
 
-    if (error) {
+        const option =
+          document.createElement("option");
 
-      console.error(error);
+        option.value =
+          taluka.id;
 
-      showMessage(
-        "Talukas load nahi ho sakin: " +
-        error.message,
-        true
+        option.textContent =
+          taluka.name;
+
+        talukaSelect.appendChild(
+          option
+        );
+
+      }
+    );
+
+  }
+
+
+  /* =========================
+     EVENTS
+  ========================= */
+
+  divisionSelect.addEventListener(
+    "change",
+    async () => {
+
+      await loadDistricts(
+        divisionSelect.value
       );
 
-      return;
     }
-
-    (data || []).forEach(taluka => {
-
-      const option =
-        document.createElement("option");
-
-      option.value = taluka.id;
-      option.textContent = taluka.name;
-
-      talukaSelect.appendChild(option);
-
-    });
-
-  }
+  );
 
 
-  /* =========================
-     DIVISION CHANGE
-  ========================= */
+  districtSelect.addEventListener(
+    "change",
+    async () => {
 
-  if (divisionSelect) {
+      await loadTalukas(
+        districtSelect.value
+      );
 
-    divisionSelect.addEventListener(
-      "change",
-      async () => {
-
-        await loadDistricts(
-          divisionSelect.value
-        );
-
-      }
-    );
-
-  }
+    }
+  );
 
 
   /* =========================
-     DISTRICT CHANGE
+     REGISTRATION NUMBER
   ========================= */
 
-  if (districtSelect) {
+  async function getNextRegistrationNumber() {
 
-    districtSelect.addEventListener(
-      "change",
-      async () => {
-
-        await loadTalukas(
-          districtSelect.value
-        );
-
-      }
-    );
-
-  }
-
-
-  /* =========================
-     GENERATE REGISTRATION NO
-  ========================= */
-
-  async function generateRegistrationNumber() {
-
-    const { data, error } =
+    const result =
       await supabaseClient
         .from("members")
         .select("registration_no")
-        .not("registration_no", "is", null)
+        .not(
+          "registration_no",
+          "is",
+          null
+        )
         .order(
           "created_at",
           {
@@ -241,29 +338,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         )
         .limit(1);
 
-    if (error) {
 
-      console.error(error);
+    if (result.error)
+      throw result.error;
 
-      throw error;
-    }
 
-    let nextNumber = 1;
+    let number = 1;
+
 
     if (
-      data &&
-      data.length &&
-      data[0].registration_no
+      result.data &&
+      result.data.length
     ) {
 
+      const last =
+        result.data[0]
+          .registration_no;
+
+
       const match =
-        String(
-          data[0].registration_no
-        ).match(/\d+$/);
+        String(last)
+          .match(/\d+$/);
+
 
       if (match) {
 
-        nextNumber =
+        number =
           parseInt(
             match[0],
             10
@@ -273,9 +373,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     }
 
+
     return (
       "YTA-SINDH-" +
-      String(nextNumber)
+      String(number)
         .padStart(5, "0")
     );
 
@@ -294,247 +395,145 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         event.preventDefault();
 
-        showMessage(
-          "Registration submit ho rahi hai..."
-        );
-
 
         try {
 
-          const fullName =
-            $("full_name")
-              ?.value
-              .trim();
+          showMessage(
+            "Submitting registration..."
+          );
 
-          const fatherName =
-            $("father_name")
-              ?.value
-              .trim();
-
-          const cnic =
-            $("cnic")
-              ?.value
-              .trim();
-
-          const mobile =
-            $("mobile")
-              ?.value
-              .trim();
-
-          const divisionId =
-            $("division_id")
-              ?.value;
-
-          const districtId =
-            $("district_id")
-              ?.value;
-
-          const talukaId =
-            $("taluka_id")
-              ?.value;
-
-          const schoolName =
-            $("school_name")
-              ?.value
-              .trim();
-
-          const semisCode =
-            $("semis_code")
-              ?.value
-              .trim();
-
-          const designation =
-            $("designation")
-              ?.value
-              .trim();
-
-          const bps =
-            $("bps")
-              ?.value
-              .trim();
-
-          const joiningDate =
-            $("joining_date")
-              ?.value || null;
-
-          const address =
-            $("address")
-              ?.value
-              .trim();
-
-
-          /* =====================
-             VALIDATION
-          ===================== */
-
-          if (!fullName) {
-
-            showMessage(
-              "Full Name required hai.",
-              true
-            );
-
-            return;
-          }
-
-          if (!cnic) {
-
-            showMessage(
-              "CNIC required hai.",
-              true
-            );
-
-            return;
-          }
-
-          if (!mobile) {
-
-            showMessage(
-              "Mobile number required hai.",
-              true
-            );
-
-            return;
-          }
-
-          if (!divisionId) {
-
-            showMessage(
-              "Division select karein.",
-              true
-            );
-
-            return;
-          }
-
-          if (!districtId) {
-
-            showMessage(
-              "District select karein.",
-              true
-            );
-
-            return;
-          }
-
-          if (!talukaId) {
-
-            showMessage(
-              "Taluka select karein.",
-              true
-            );
-
-            return;
-          }
-
-          if (!schoolName) {
-
-            showMessage(
-              "School Name required hai.",
-              true
-            );
-
-            return;
-          }
-
-
-          /* =====================
-             REGISTRATION NUMBER
-          ===================== */
 
           const registrationNo =
-            await generateRegistrationNumber();
+            await getNextRegistrationNumber();
 
 
-          /* =====================
-             INSERT
-          ===================== */
+          const member = {
 
-          const {
-            data,
-            error
-          } =
+            registration_no:
+              registrationNo,
+
+            full_name:
+              document
+                .getElementById(
+                  "full_name"
+                )
+                .value
+                .trim(),
+
+            father_name:
+              document
+                .getElementById(
+                  "father_name"
+                )
+                .value
+                .trim() || null,
+
+            cnic:
+              document
+                .getElementById(
+                  "cnic"
+                )
+                .value
+                .trim(),
+
+            mobile:
+              document
+                .getElementById(
+                  "mobile"
+                )
+                .value
+                .trim(),
+
+            division_id:
+              divisionSelect.value,
+
+            district_id:
+              districtSelect.value,
+
+            taluka_id:
+              talukaSelect.value,
+
+            school_name:
+              document
+                .getElementById(
+                  "school_name"
+                )
+                .value
+                .trim(),
+
+            semis_code:
+              document
+                .getElementById(
+                  "semis_code"
+                )
+                .value
+                .trim() || null,
+
+            designation:
+              document
+                .getElementById(
+                  "designation"
+                )
+                .value
+                .trim() || "Teacher",
+
+            bps:
+              document
+                .getElementById(
+                  "bps"
+                )
+                .value
+                .trim() || null,
+
+            joining_date:
+              document
+                .getElementById(
+                  "joining_date"
+                )
+                .value || null,
+
+            address:
+              document
+                .getElementById(
+                  "address"
+                )
+                .value
+                .trim() || null,
+
+            status:
+              "Under Review"
+
+          };
+
+
+          const result =
             await supabaseClient
               .from("members")
-              .insert({
-
-                registration_no:
-                  registrationNo,
-
-                full_name:
-                  fullName,
-
-                father_name:
-                  fatherName || null,
-
-                cnic:
-                  cnic,
-
-                mobile:
-                  mobile,
-
-                division_id:
-                  divisionId,
-
-                district_id:
-                  districtId,
-
-                taluka_id:
-                  talukaId,
-
-                school_name:
-                  schoolName,
-
-                semis_code:
-                  semisCode || null,
-
-                designation:
-                  designation ||
-                  "Teacher",
-
-                bps:
-                  bps || null,
-
-                joining_date:
-                  joiningDate,
-
-                address:
-                  address || null,
-
-                status:
-                  "Under Review"
-
-              })
-              .select()
-              .single();
+              .insert(member);
 
 
-          if (error) {
+          if (result.error) {
 
             console.error(
-              "Registration Error:",
-              error
+              "MEMBER INSERT ERROR:",
+              result.error
             );
 
             showMessage(
-              "Registration failed: " +
-              error.message,
+              "Registration Error: " +
+              result.error.message,
               true
             );
 
             return;
           }
 
-
-          /* =====================
-             SUCCESS
-          ===================== */
 
           showMessage(
             "Registration successful! " +
             "Registration No: " +
             registrationNo +
-            " | Application Under Review hai."
+            ". Application Under Review hai."
           );
 
 
@@ -544,35 +543,27 @@ document.addEventListener("DOMContentLoaded", async () => {
           await loadDivisions();
 
 
-          districtSelect.innerHTML = `
-            <option value="">
-              Select District
-            </option>
-          `;
+          setLoading(
+            districtSelect,
+            "Select District"
+          );
 
 
-          talukaSelect.innerHTML = `
-            <option value="">
-              Select Taluka
-            </option>
-          `;
-
-
-          console.log(
-            "Registered Member:",
-            data
+          setLoading(
+            talukaSelect,
+            "Select Taluka"
           );
 
 
         } catch (error) {
 
           console.error(
-            "Registration Error:",
+            "REGISTRATION ERROR:",
             error
           );
 
           showMessage(
-            "Unexpected error: " +
+            "Error: " +
             error.message,
             true
           );
