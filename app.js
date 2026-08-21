@@ -1,11 +1,20 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
+  /* =====================================================
+     SUPABASE
+  ===================================================== */
+
   const supabaseClient = window.supabase.createClient(
     window.YTA_CONFIG.supabaseUrl,
     window.YTA_CONFIG.supabaseAnonKey
   );
 
   const $ = (id) => document.getElementById(id);
+
+
+  /* =====================================================
+     ELEMENTS
+  ===================================================== */
 
   const loginForm = $("loginForm");
   const loginMessage = $("loginMessage");
@@ -27,20 +36,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   const membersMessage = $("membersMessage");
   const membersSection = document.querySelector(".members-section");
 
+
+  /* =====================================================
+     GLOBAL DATA
+  ===================================================== */
+
   let allMembers = [];
 
   let divisionsMap = {};
   let districtsMap = {};
   let talukasMap = {};
 
+  let currentUser = null;
+  let currentProfile = null;
 
-  /* =========================
-     HELPERS
-  ========================= */
+  let currentRole = null;
+  let currentDistrictId = null;
+
+
+  /* =====================================================
+     MESSAGE
+  ===================================================== */
 
   function message(text, error = false) {
 
-    if (!loginMessage) return;
+    if (!loginMessage) {
+      return;
+    }
 
     loginMessage.textContent = text;
 
@@ -48,6 +70,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       error ? "#b91c1c" : "#15803d";
   }
 
+
+  /* =====================================================
+     ESCAPE HTML
+  ===================================================== */
 
   function escapeHTML(value) {
 
@@ -66,6 +92,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       .replace(/'/g, "&#039;");
   }
 
+
+  /* =====================================================
+     DASHBOARD
+  ===================================================== */
 
   function showDashboard(email) {
 
@@ -95,9 +125,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
-     LOAD LOCATION DATA
-  ========================= */
+  /* =====================================================
+     LOAD DIVISION / DISTRICT / TALUKA MAPS
+  ===================================================== */
 
   async function loadLocationMaps() {
 
@@ -125,26 +155,32 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (divisionsResult.error) {
+
         console.error(
-          "Divisions:",
+          "Divisions Error:",
           divisionsResult.error
         );
+
       }
 
 
       if (districtsResult.error) {
+
         console.error(
-          "Districts:",
+          "Districts Error:",
           districtsResult.error
         );
+
       }
 
 
       if (talukasResult.error) {
+
         console.error(
-          "Talukas:",
+          "Talukas Error:",
           talukasResult.error
         );
+
       }
 
 
@@ -187,41 +223,52 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (error) {
 
       console.error(
-        "Location maps error:",
+        "Location Maps Error:",
         error
       );
 
     }
+
   }
 
 
+  /* =====================================================
+     LOCATION NAME HELPERS
+  ===================================================== */
+
   function divisionName(id) {
 
-    return divisionsMap[id] ||
-      id ||
-      "";
+    if (!id) {
+      return "";
+    }
+
+    return divisionsMap[id] || id;
   }
 
 
   function districtName(id) {
 
-    return districtsMap[id] ||
-      id ||
-      "";
+    if (!id) {
+      return "";
+    }
+
+    return districtsMap[id] || id;
   }
 
 
   function talukaName(id) {
 
-    return talukasMap[id] ||
-      id ||
-      "";
+    if (!id) {
+      return "";
+    }
+
+    return talukasMap[id] || id;
   }
 
 
-  /* =========================
+  /* =====================================================
      USER PROFILE
-  ========================= */
+  ===================================================== */
 
   async function getUserProfile(userId) {
 
@@ -249,16 +296,165 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
+     DISTRICT ADMIN ACCESS
+  ===================================================== */
+
+  async function getDistrictAdmin(userId) {
+
+    const {
+      data,
+      error
+    } = await supabaseClient
+      .from("district_admins")
+      .select(
+        "id,user_id,district_id,is_active"
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .eq(
+        "is_active",
+        true
+      )
+      .maybeSingle();
+
+
+    if (error) {
+
+      console.error(
+        "District Admin Error:",
+        error
+      );
+
+      return null;
+    }
+
+
+    return data;
+  }
+
+
+  /* =====================================================
+     SET USER ACCESS
+  ===================================================== */
+
+  async function setupUserAccess(userId) {
+
+    currentUser = userId;
+
+    currentProfile =
+      await getUserProfile(userId);
+
+
+    if (!currentProfile) {
+
+      throw new Error(
+        "User profile not found."
+      );
+
+    }
+
+
+    currentRole =
+      currentProfile.role;
+
+
+    currentDistrictId = null;
+
+
+    /* ===============================================
+       CENTRAL OWNER
+    =============================================== */
+
+    if (
+      currentRole ===
+      "central_owner"
+    ) {
+
+      return true;
+
+    }
+
+
+    /* ===============================================
+       DISTRICT ADMIN
+    =============================================== */
+
+    if (
+      currentRole ===
+      "district_admin"
+    ) {
+
+      const districtAdmin =
+        await getDistrictAdmin(
+          userId
+        );
+
+
+      if (
+        !districtAdmin ||
+        !districtAdmin.district_id
+      ) {
+
+        throw new Error(
+          "District Admin ka District assign nahi hai."
+        );
+
+      }
+
+
+      currentDistrictId =
+        districtAdmin.district_id;
+
+
+      return true;
+
+    }
+
+
+    throw new Error(
+      "Aapko dashboard access nahi hai."
+    );
+
+  }
+
+
+  /* =====================================================
+     ACCESS INFORMATION
+  ===================================================== */
+
+  function isCentralOwner() {
+
+    return (
+      currentRole ===
+      "central_owner"
+    );
+
+  }
+
+
+  function isDistrictAdmin() {
+
+    return (
+      currentRole ===
+      "district_admin"
+    );
+
+  }
+
+
+  /* =====================================================
      STATISTICS
-  ========================= */
+  ===================================================== */
 
   async function loadStats() {
 
     try {
 
-      const total =
-        await supabaseClient
+      let totalQuery =
+        supabaseClient
           .from("members")
           .select("*", {
             count: "exact",
@@ -266,8 +462,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           });
 
 
-      const pending =
-        await supabaseClient
+      let pendingQuery =
+        supabaseClient
           .from("members")
           .select("*", {
             count: "exact",
@@ -279,8 +475,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
 
-      const approved =
-        await supabaseClient
+      let approvedQuery =
+        supabaseClient
           .from("members")
           .select("*", {
             count: "exact",
@@ -292,8 +488,8 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
 
-      const rejected =
-        await supabaseClient
+      let rejectedQuery =
+        supabaseClient
           .from("members")
           .select("*", {
             count: "exact",
@@ -305,44 +501,108 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
 
+      /*
+        District Admin ko sirf
+        apne District ka data.
+      */
+
+      if (
+        isDistrictAdmin() &&
+        currentDistrictId
+      ) {
+
+        totalQuery =
+          totalQuery.eq(
+            "district_id",
+            currentDistrictId
+          );
+
+
+        pendingQuery =
+          pendingQuery.eq(
+            "district_id",
+            currentDistrictId
+          );
+
+
+        approvedQuery =
+          approvedQuery.eq(
+            "district_id",
+            currentDistrictId
+          );
+
+
+        rejectedQuery =
+          rejectedQuery.eq(
+            "district_id",
+            currentDistrictId
+          );
+
+      }
+
+
+      const [
+        total,
+        pending,
+        approved,
+        rejected
+      ] = await Promise.all([
+
+        totalQuery,
+        pendingQuery,
+        approvedQuery,
+        rejectedQuery
+
+      ]);
+
+
       if (totalMembers) {
+
         totalMembers.textContent =
           total.count ?? 0;
+
       }
 
 
       if (pendingMembers) {
+
         pendingMembers.textContent =
           pending.count ?? 0;
+
       }
 
 
       if (approvedMembers) {
+
         approvedMembers.textContent =
           approved.count ?? 0;
+
       }
 
 
       if (rejectedMembers) {
+
         rejectedMembers.textContent =
           rejected.count ?? 0;
+
       }
 
 
     } catch (error) {
 
       console.error(
-        "Statistics:",
+        "Statistics Error:",
         error
       );
 
     }
+
   }
 
 
-  /* =========================
+  /* =====================================================
      RENDER MEMBERS
-  ========================= */
+  ===================================================== */
 
   function renderMembers(members) {
 
@@ -359,7 +619,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       membersTableBody.innerHTML = `
         <tr>
           <td
-            colspan="10"
+            colspan="11"
             style="
               text-align:center;
               padding:25px;
@@ -378,6 +638,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       const row =
         document.createElement("tr");
+
+
+      /*
+        District Admin ko sirf
+        apne district ke records.
+      */
+
+      const canManage =
+        isCentralOwner() ||
+        (
+          isDistrictAdmin() &&
+          member.district_id ===
+          currentDistrictId
+        );
 
 
       row.innerHTML = `
@@ -451,34 +725,45 @@ document.addEventListener("DOMContentLoaded", async () => {
             View
           </button>
 
-          <button
-            class="approve-btn"
-            data-member-approve="${member.id}"
-          >
-            Approve
-          </button>
+          ${
+            canManage
+            ?
+            `
+              <button
+                class="approve-btn"
+                data-member-approve="${member.id}"
+              >
+                Approve
+              </button>
 
-          <button
-            class="reject-btn"
-            data-member-reject="${member.id}"
-          >
-            Reject
-          </button>
+              <button
+                class="reject-btn"
+                data-member-reject="${member.id}"
+              >
+                Reject
+              </button>
+            `
+            :
+            ""
+          }
 
         </td>
+
       `;
 
 
-      membersTableBody.appendChild(row);
+      membersTableBody.appendChild(
+        row
+      );
 
     });
 
   }
 
 
-  /* =========================
+  /* =====================================================
      LOAD MEMBERS
-  ========================= */
+  ===================================================== */
 
   async function loadMembers() {
 
@@ -488,52 +773,77 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     if (membersMessage) {
+
       membersMessage.textContent =
         "Loading members...";
+
     }
 
 
     await loadLocationMaps();
 
 
+    let query =
+      supabaseClient
+        .from("members")
+        .select(`
+          id,
+          registration_no,
+          full_name,
+          father_name,
+          cnic,
+          mobile,
+          division_id,
+          district_id,
+          taluka_id,
+          school_name,
+          semis_code,
+          designation,
+          bps,
+          joining_date,
+          address,
+          photo_url,
+          status,
+          created_at,
+          updated_at
+        `)
+        .order(
+          "created_at",
+          {
+            ascending: false
+          }
+        );
+
+
+    /*
+      IMPORTANT:
+      District Admin ko sirf apna District.
+    */
+
+    if (
+      isDistrictAdmin() &&
+      currentDistrictId
+    ) {
+
+      query =
+        query.eq(
+          "district_id",
+          currentDistrictId
+        );
+
+    }
+
+
     const {
       data,
       error
-    } = await supabaseClient
-      .from("members")
-      .select(`
-        id,
-        registration_no,
-        full_name,
-        father_name,
-        cnic,
-        mobile,
-        division_id,
-        district_id,
-        taluka_id,
-        school_name,
-        semis_code,
-        designation,
-        bps,
-        joining_date,
-        address,
-        photo_url,
-        status,
-        created_at,
-        updated_at
-      `)
-      .order(
-        "created_at",
-        {
-          ascending: false
-        }
-      );
+    } = await query;
 
 
     if (error) {
 
       console.error(
-        "Members:",
+        "Members Error:",
         error
       );
 
@@ -547,6 +857,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       return;
+
     }
 
 
@@ -590,9 +901,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
-     FILTER MEMBERS
-  ========================= */
+  /* =====================================================
+     FILTER
+  ===================================================== */
 
   function filterMembers() {
 
@@ -606,7 +917,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     const status =
-      memberStatus?.value || "";
+      memberStatus?.value ||
+      "";
 
 
     const result =
@@ -635,13 +947,17 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           return (
 
-            (!search ||
-              text.includes(search))
+            (
+              !search ||
+              text.includes(search)
+            )
 
             &&
 
-            (!status ||
-              member.status === status)
+            (
+              !status ||
+              member.status === status
+            )
 
           );
 
@@ -649,19 +965,72 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
 
-    renderMembers(result);
+    renderMembers(
+      result
+    );
 
   }
 
 
-  /* =========================
-     CHANGE STATUS
-  ========================= */
+  /* =====================================================
+     CHANGE MEMBER STATUS
+  ===================================================== */
 
   async function changeMemberStatus(
     id,
     status
   ) {
+
+    const member =
+      allMembers.find(
+        item =>
+          item.id === id
+      );
+
+
+    if (!member) {
+
+      alert(
+        "Member not found."
+      );
+
+      return;
+
+    }
+
+
+    /*
+      SECURITY CHECK
+    */
+
+    if (
+      isDistrictAdmin() &&
+      member.district_id !==
+      currentDistrictId
+    ) {
+
+      alert(
+        "Aap sirf apne District ke member ko update kar sakte hain."
+      );
+
+      return;
+
+    }
+
+
+    if (
+      !isCentralOwner() &&
+      !isDistrictAdmin()
+    ) {
+
+      alert(
+        "Permission denied."
+      );
+
+      return;
+
+    }
+
 
     const {
       error
@@ -684,11 +1053,18 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (error) {
 
       alert(
+        "Status update failed:\n\n" +
         error.message
       );
 
       return;
+
     }
+
+
+    alert(
+      `Member ${status} ho gaya.`
+    );
 
 
     await loadMembers();
@@ -697,9 +1073,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      MEMBERS MANAGEMENT
-  ========================= */
+  ===================================================== */
 
   async function openMembersManagement() {
 
@@ -710,6 +1086,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
     }
 
 
@@ -724,9 +1101,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      MEMBER DETAILS
-  ========================= */
+  ===================================================== */
 
   function openDetails(
     title,
@@ -745,7 +1122,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     modal.id =
@@ -770,90 +1149,104 @@ document.addEventListener("DOMContentLoaded", async () => {
     Object.entries(
       data || {}
     ).forEach(
-      ([key, value]) => {
+      ([key,value]) => {
 
         if (
           key.startsWith("_")
         ) {
+
           return;
+
         }
 
 
         if (
-          value !== null &&
-          value !== undefined &&
-          value !== ""
+          value === null ||
+          value === undefined ||
+          value === ""
         ) {
 
-          let displayValue =
-            value;
-
-
-          if (
-            key === "division_id"
-          ) {
-
-            displayValue =
-              divisionName(value);
-
-          }
-
-
-          if (
-            key === "district_id"
-          ) {
-
-            displayValue =
-              districtName(value);
-
-          }
-
-
-          if (
-            key === "taluka_id"
-          ) {
-
-            displayValue =
-              talukaName(value);
-
-          }
-
-
-          rows += `
-
-            <tr>
-
-              <th
-                style="
-                  text-align:left;
-                  padding:10px;
-                  border-bottom:1px solid #ddd;
-                "
-              >
-                ${escapeHTML(
-                  key.replaceAll(
-                    "_",
-                    " "
-                  )
-                )}
-              </th>
-
-              <td
-                style="
-                  padding:10px;
-                  border-bottom:1px solid #ddd;
-                "
-              >
-                ${escapeHTML(
-                  displayValue
-                )}
-              </td>
-
-            </tr>
-
-          `;
+          return;
 
         }
+
+
+        let displayValue =
+          value;
+
+
+        if (
+          key ===
+          "division_id"
+        ) {
+
+          displayValue =
+            divisionName(
+              value
+            );
+
+        }
+
+
+        if (
+          key ===
+          "district_id"
+        ) {
+
+          displayValue =
+            districtName(
+              value
+            );
+
+        }
+
+
+        if (
+          key ===
+          "taluka_id"
+        ) {
+
+          displayValue =
+            talukaName(
+              value
+            );
+
+        }
+
+
+        rows += `
+
+          <tr>
+
+            <th
+              style="
+                text-align:left;
+                padding:10px;
+                border-bottom:1px solid #ddd;
+              "
+            >
+              ${escapeHTML(
+                key.replaceAll(
+                  "_",
+                  " "
+                )
+              )}
+            </th>
+
+            <td
+              style="
+                padding:10px;
+                border-bottom:1px solid #ddd;
+              "
+            >
+              ${escapeHTML(
+                displayValue
+              )}
+            </td>
+
+          </tr>
+
+        `;
 
       }
     );
@@ -903,6 +1296,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </table>
 
       </div>
+
     `;
 
 
@@ -921,11 +1315,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
-     DISTRICTS
-  ========================= */
+  /* =====================================================
+     OPEN DISTRICTS
+  ===================================================== */
 
   async function openDistricts() {
+
+    await loadLocationMaps();
+
 
     const {
       data: districts,
@@ -948,6 +1345,31 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
+    }
+
+
+    /*
+      District Admin ko sirf
+      assigned District dikhayen.
+    */
+
+    let visibleDistricts =
+      districts || [];
+
+
+    if (
+      isDistrictAdmin() &&
+      currentDistrictId
+    ) {
+
+      visibleDistricts =
+        visibleDistricts.filter(
+          district =>
+            district.id ===
+            currentDistrictId
+        );
+
     }
 
 
@@ -963,7 +1385,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     modal.id =
@@ -985,7 +1409,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     let rows = "";
 
 
-    (districts || []).forEach(
+    visibleDistricts.forEach(
       district => {
 
         rows += `
@@ -1035,16 +1459,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             </td>
 
           </tr>
+
         `;
 
       }
     );
 
 
-    if (
-      !districts ||
-      !districts.length
-    ) {
+    if (!visibleDistricts.length) {
 
       rows = `
 
@@ -1061,6 +1483,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           </td>
 
         </tr>
+
       `;
 
     }
@@ -1117,33 +1540,27 @@ document.addEventListener("DOMContentLoaded", async () => {
 
               <tr>
 
-                <th
-                  style="
-                    padding:12px;
-                    text-align:left;
-                    background:#f1f5f9;
-                  "
-                >
+                <th style="
+                  padding:12px;
+                  text-align:left;
+                  background:#f1f5f9;
+                ">
                   District Name
                 </th>
 
-                <th
-                  style="
-                    padding:12px;
-                    text-align:left;
-                    background:#f1f5f9;
-                  "
-                >
+                <th style="
+                  padding:12px;
+                  text-align:left;
+                  background:#f1f5f9;
+                ">
                   Division
                 </th>
 
-                <th
-                  style="
-                    padding:12px;
-                    text-align:left;
-                    background:#f1f5f9;
-                  "
-                >
+                <th style="
+                  padding:12px;
+                  text-align:left;
+                  background:#f1f5f9;
+                ">
                   Members
                 </th>
 
@@ -1160,6 +1577,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
       </div>
+
     `;
 
 
@@ -1202,14 +1620,33 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      DISTRICT MEMBERS
-  ========================= */
+  ===================================================== */
 
   async function openDistrictMembers(
     districtId,
     districtNameText
   ) {
+
+    /*
+      District Admin security
+    */
+
+    if (
+      isDistrictAdmin() &&
+      districtId !==
+      currentDistrictId
+    ) {
+
+      alert(
+        "Aap sirf apne District ke members dekh sakte hain."
+      );
+
+      return;
+
+    }
+
 
     await loadLocationMaps();
 
@@ -1255,6 +1692,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
     }
 
 
@@ -1295,7 +1733,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     modal.id =
@@ -1374,9 +1814,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     );
 
 
-    if (
-      !districtMembers.length
-    ) {
+    if (!districtMembers.length) {
 
       body = `
 
@@ -1509,6 +1947,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
       </div>
+
     `;
 
 
@@ -1527,9 +1966,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      DIVISIONS
-  ========================= */
+  ===================================================== */
 
   async function openDivisions() {
 
@@ -1557,6 +1996,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
     }
 
 
@@ -1564,17 +2004,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Divisions",
       data || [],
       [
-        ["name","Division Name"],
-        ["created_at","Created"]
+        [
+          "name",
+          "Division Name"
+        ],
+        [
+          "created_at",
+          "Created"
+        ]
       ]
     );
 
   }
 
 
-  /* =========================
+  /* =====================================================
      TALUKAS
-  ========================= */
+  ===================================================== */
 
   async function openTalukas() {
 
@@ -1602,11 +2048,36 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
+    }
+
+
+    let visibleTalukas =
+      data || [];
+
+
+    /*
+      District Admin ko sirf
+      apne District ki Talukas.
+    */
+
+    if (
+      isDistrictAdmin() &&
+      currentDistrictId
+    ) {
+
+      visibleTalukas =
+        visibleTalukas.filter(
+          item =>
+            item.district_id ===
+            currentDistrictId
+        );
+
     }
 
 
     const converted =
-      (data || []).map(
+      visibleTalukas.map(
         item => ({
 
           ...item,
@@ -1624,17 +2095,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Talukas",
       converted,
       [
-        ["name","Taluka Name"],
-        ["district_name","District"]
+        [
+          "name",
+          "Taluka Name"
+        ],
+        [
+          "district_name",
+          "District"
+        ]
       ]
     );
 
   }
 
 
-  /* =========================
+  /* =====================================================
      SIMPLE TABLE
-  ========================= */
+  ===================================================== */
 
   function openSimpleTable(
     title,
@@ -1654,7 +2131,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
     modal =
-      document.createElement("div");
+      document.createElement(
+        "div"
+      );
 
 
     modal.id =
@@ -1821,6 +2300,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         </div>
 
       </div>
+
     `;
 
 
@@ -1839,9 +2319,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      CENTRAL
-  ========================= */
+  ===================================================== */
 
   async function openCentral() {
 
@@ -1863,6 +2343,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
     }
 
 
@@ -1884,9 +2365,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      OFFICE BEARERS
-  ========================= */
+  ===================================================== */
 
   async function openOfficeBearers() {
 
@@ -1908,6 +2389,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       );
 
       return;
+
     }
 
 
@@ -1915,21 +2397,39 @@ document.addEventListener("DOMContentLoaded", async () => {
       "Dynamic Office Bearers",
       data || [],
       [
-        ["name","Name"],
-        ["father_name","Father Name"],
-        ["designation","Designation"],
-        ["bps","BPS"],
-        ["mobile","Mobile"],
-        ["is_active","Active"]
+        [
+          "name",
+          "Name"
+        ],
+        [
+          "father_name",
+          "Father Name"
+        ],
+        [
+          "designation",
+          "Designation"
+        ],
+        [
+          "bps",
+          "BPS"
+        ],
+        [
+          "mobile",
+          "Mobile"
+        ],
+        [
+          "is_active",
+          "Active"
+        ]
       ]
     );
 
   }
 
 
-  /* =========================
-     NAVIGATION BUTTONS
-  ========================= */
+  /* =====================================================
+     NAVIGATION
+  ===================================================== */
 
   document.addEventListener(
     "click",
@@ -1952,7 +2452,9 @@ document.addEventListener("DOMContentLoaded", async () => {
           .toLowerCase() !==
         "open"
       ) {
+
         return;
+
       }
 
 
@@ -1968,18 +2470,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       const heading =
-        card.querySelector("h3");
+        card.querySelector(
+          "h3"
+        );
 
 
       const title =
         heading
           ?.textContent
           .trim()
-          .toLowerCase() || "";
+          .toLowerCase() ||
+        "";
 
 
       if (
-        title === "members"
+        title ===
+        "members"
       ) {
 
         await openMembersManagement();
@@ -1989,7 +2495,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (
-        title === "districts"
+        title ===
+        "districts"
       ) {
 
         await openDistricts();
@@ -1999,7 +2506,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (
-        title === "divisions"
+        title ===
+        "divisions"
       ) {
 
         await openDivisions();
@@ -2009,7 +2517,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (
-        title === "talukas"
+        title ===
+        "talukas"
       ) {
 
         await openTalukas();
@@ -2019,7 +2528,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (
-        title === "central"
+        title ===
+        "central"
       ) {
 
         await openCentral();
@@ -2029,7 +2539,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
       if (
-        title === "office bearers"
+        title ===
+        "office bearers"
       ) {
 
         await openOfficeBearers();
@@ -2041,9 +2552,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   );
 
 
-  /* =========================
-     MEMBER LOAD BUTTON
-  ========================= */
+  /* =====================================================
+     LOAD MEMBERS BUTTON
+  ===================================================== */
 
   if (loadMembersBtn) {
 
@@ -2059,9 +2570,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      SEARCH
-  ========================= */
+  ===================================================== */
 
   if (memberSearch) {
 
@@ -2073,9 +2584,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      STATUS FILTER
-  ========================= */
+  ===================================================== */
 
   if (memberStatus) {
 
@@ -2087,9 +2598,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      MEMBER ACTIONS
-  ========================= */
+  ===================================================== */
 
   if (membersTableBody) {
 
@@ -2124,13 +2635,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           ) {
 
             await changeMemberStatus(
-              approve.dataset.memberApprove,
+              approve.dataset
+                .memberApprove,
               "Approved"
             );
 
           }
 
           return;
+
         }
 
 
@@ -2143,13 +2656,15 @@ document.addEventListener("DOMContentLoaded", async () => {
           ) {
 
             await changeMemberStatus(
-              reject.dataset.memberReject,
+              reject.dataset
+                .memberReject,
               "Rejected"
             );
 
           }
 
           return;
+
         }
 
 
@@ -2159,7 +2674,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             allMembers.find(
               item =>
                 item.id ===
-                view.dataset.memberView
+                view.dataset
+                  .memberView
             );
 
 
@@ -2180,9 +2696,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      LOGIN
-  ========================= */
+  ===================================================== */
 
   if (loginForm) {
 
@@ -2251,30 +2767,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         try {
 
-          const profile =
-            await getUserProfile(
-              data.user.id
-            );
-
-
-          if (
-            !profile ||
-            profile.role !==
-              "central_owner"
-          ) {
-
-            await supabaseClient.auth
-              .signOut();
-
-
-            message(
-              "Central Owner access required.",
-              true
-            );
-
-            return;
-
-          }
+          await setupUserAccess(
+            data.user.id
+          );
 
 
           showDashboard(
@@ -2282,18 +2777,31 @@ document.addEventListener("DOMContentLoaded", async () => {
           );
 
 
-          message(
-            "Login successful."
-          );
+          if (
+            isCentralOwner()
+          ) {
+
+            message(
+              "Central Owner Login Successful."
+            );
+
+          } else {
+
+            message(
+              "District Admin Login Successful."
+            );
+
+          }
 
 
           await loadLocationMaps();
           await loadStats();
 
+
         } catch (error) {
 
           console.error(
-            "Profile Error:",
+            "Access Error:",
             error
           );
 
@@ -2303,7 +2811,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
           message(
-            "User role verify nahi ho saka.",
+            error.message ||
+            "Access verify nahi ho saka.",
             true
           );
 
@@ -2315,9 +2824,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      LOGOUT
-  ========================= */
+  ===================================================== */
 
   if (logoutBtn) {
 
@@ -2329,6 +2838,13 @@ document.addEventListener("DOMContentLoaded", async () => {
           .signOut();
 
 
+        currentUser = null;
+        currentProfile = null;
+        currentRole = null;
+        currentDistrictId = null;
+        allMembers = [];
+
+
         showLogin();
 
       }
@@ -2337,9 +2853,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
 
-  /* =========================
+  /* =====================================================
      EXISTING SESSION
-  ========================= */
+  ===================================================== */
 
   try {
 
@@ -2358,17 +2874,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (data?.session) {
 
-      const profile =
-        await getUserProfile(
+      try {
+
+        await setupUserAccess(
           data.session.user.id
         );
 
-
-      if (
-        profile &&
-        profile.role ===
-          "central_owner"
-      ) {
 
         showDashboard(
           data.session.user.email
@@ -2378,7 +2889,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadLocationMaps();
         await loadStats();
 
-      } else {
+
+      } catch (accessError) {
+
+        console.error(
+          "Existing Session Access Error:",
+          accessError
+        );
+
 
         await supabaseClient.auth
           .signOut();
